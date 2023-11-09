@@ -1,44 +1,60 @@
-# Mull
+# Mutation
 
-Mull is a practical [mutation testing](https://mull.readthedocs.io/en/latest/MutationTestingIntro.html) tool for C and C++.
+This set of instructions is intended to:
+1.	Set up the correct version of LLVM for mutation using Mull on your system
+2.	Pull, build and set up `Mull`
 
-For installation and usage please refer to the latest documentation: https://mull.readthedocs.io
+### Requirements
+- A MacBook running Ventura or Sonoma (not tested on other systems)
+- Homebrew
+- Git SSH keys to be registered with both GitHub enterprise and GitHub
 
-For support visit [this page](https://mull.readthedocs.io/en/latest/Support.html).
+## Setup
 
-## Join us in Discord
 
-Here is the invitation link to the Discord channel: https://discord.gg/Hphp7dW
+### LLVM@14
+1.	Run 
+    1.	`make llvm` to set up llvm 
+    2.	Alternatively, Run `brew install llvm@14`
+2.	Make sure all other versions of llvm are not referenced from your environment.
+3.	Follow the instructions to update !/.zshrc
+4. Restart your terminal 
 
-## Contributing
+5. At this point you can run `make` to build mull binaries and the `mull.yml` within the `output` dir. Alternatively, you can follow the rest of this README to produce the same results.
 
-Here is the starting point: [CONTRIBUTING.md](CONTRIBUTING.md)
+## Setup Mull
+6.	To setup mull 
+    1.	Run make `make mull` to setup mull in the correct directory
+    2.	Alternatively, 
 
-## Citation
+        ```git clone https://github.com/mull-project/mull.git mull –recursive
+        cd mull
+        mkdir build.dir
+        cd build.dir
+        cmake -DCMAKE_PREFIX_PATH="/usr/local/opt/llvm@14/lib/cmake/llvm/;/usr/local/opt/llvm@14/lib/cmake/clang/" .. 
+        make -j $(sysctl -n hw.ncpu)
+        cd ..
+        mkdir -p output
+        cp build.dir/tools/mull-runner/mull-runner-14 output
+        cp build.dir/tools/mull-ir-frontend/mull-ir-frontend-14 output
+        ```
 
-[Mull it over: mutation testing based on LLVM (preprint)](https://lowlevelbits.org/pdfs/Mull_Mutation_2018.pdf)
+## Configure Mull
 
+7.	Make sure you run `make yml` to generate a `mull.yml` file with a timeout of 99999999 ms at the root folder of the project
+    1.	Use MUTATORS to pass in mutation operators you would like to enable
+    2.	Use TIMEOUT flag to set the timeout
+    3.	Use EXCLUDEPATHS to pass in paths to exclude separated by ; in quotation “”
+    4.	Use INCLUDEPATHS to pass in paths to include separated by ; in quotation “”
+    5.	Use QUIET to pass in false to enable additional logging
+
+## Binaries + Mull.yml
+If the above steps have been executed correctly, your output folder should look as follows:
+```output
+├── mull-ir-frontend-14
+├── mull-runner-14
+└── mull.yml
 ```
-@INPROCEEDINGS{8411727, 
-author={A. Denisov and S. Pankevich}, 
-booktitle={2018 IEEE International Conference on Software Testing, Verification and Validation Workshops (ICSTW)}, 
-title={Mull It Over: Mutation Testing Based on LLVM}, 
-year={2018}, 
-volume={}, 
-number={}, 
-pages={25-31}, 
-keywords={just-in-time;program compilers;program testing;program verification;mutations;Mull;LLVM IR;mutated programs;compiled programming languages;LLVM framework;LLVM JIT;tested program;mutation testing tool;Testing;Tools;Computer languages;Instruments;Runtime;Computer crashes;Open source software;mutation testing;llvm}, 
-doi={10.1109/ICSTW.2018.00024}, 
-ISSN={}, 
-month={April},}
-```
-
-## Packages
-
-[![Hosted By: Cloudsmith](https://img.shields.io/badge/OSS%20hosting%20by-cloudsmith-blue?logo=cloudsmith&style=for-the-badge)](https://cloudsmith.com)
-
-Hosting for precompiled packages is graciously provided by  [Cloudsmith](https://cloudsmith.com).
-
-## Copyright
-
-Copyright (c) 2016-2022 Alex Denisov <alex@lowlevelbits.org> and Stanislav Pankevich <s.pankevich@gmail.com>. See LICENSE for details.
+You can copy this folder to where your project exists and modify your project for mutation. 
+### Note on mull.yml
+This file should reside at the top directory of your mutated project.
