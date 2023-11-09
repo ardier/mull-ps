@@ -9,6 +9,10 @@ This set of instructions is intended to:
 - Homebrew
 - Git SSH keys to be registered with both GitHub enterprise and GitHub
 
+## Cloning
+Make sure to clone using the recursive flag as follows:
+ ```git clone https://github.com/mull-project/mull.git mull –recursive```
+
 ## Setup
 
 
@@ -27,8 +31,7 @@ This set of instructions is intended to:
     1.	Run make `make mull` to setup mull in the correct directory
     2.	Alternatively, 
 
-        ```git clone https://github.com/mull-project/mull.git mull –recursive
-        cd mull
+        ```
         mkdir build.dir
         cd build.dir
         cmake -DCMAKE_PREFIX_PATH="/usr/local/opt/llvm@14/lib/cmake/llvm/;/usr/local/opt/llvm@14/lib/cmake/clang/" .. 
