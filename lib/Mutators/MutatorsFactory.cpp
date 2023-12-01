@@ -14,7 +14,6 @@
 #include "mull/Mutators/ScalarValueMutator.h"
 #include <llvm/ADT/STLExtras.h>
 #include <mull/Mutators/CXX/HalideMutators.h>
-#include <mull/Mutators/CXX/HalideTempMutators.h>
 #include <sstream>
 #include <unordered_set>
 
