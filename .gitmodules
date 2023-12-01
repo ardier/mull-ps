@@ -5,7 +5,7 @@
 [submodule "vendor/libirm"]
 	path = vendor/libirm
 	url = https://github.com/ardier/libirm-halide/
-	branch = mainhalide-mutants
+	branch = halide-mutants
 [submodule "vendor/spdlog"]
 	path = vendor/spdlog
 	url = https://github.com/gabime/spdlog.git
