@@ -56,6 +56,7 @@ set(mull_sources
   JunkDetection/CXX/Visitors/NegateConditionVisitor.cpp
   JunkDetection/CXX/Visitors/RemoveVoidFunctionVisitor.cpp
   JunkDetection/CXX/Visitors/ReplaceCallVisitor.cpp
+  JunkDetection/CXX/Visitors/ReplaceHalideCallVisitor.cpp
   JunkDetection/CXX/Visitors/BinaryVisitor.cpp
   JunkDetection/CXX/Visitors/UnaryVisitor.cpp
   JunkDetection/CXX/ASTStorage.cpp
