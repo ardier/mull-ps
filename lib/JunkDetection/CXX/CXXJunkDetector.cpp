@@ -1,17 +1,17 @@
 #include "mull/JunkDetection/CXX/CXXJunkDetector.h"
 
 #include "mull/Diagnostics/Diagnostics.h"
-#include "mull/Mutators/CXX/RemoveNegation.h"
-#include "mull/Mutators/CXX/RemoveNegation.h"
-#include "mull/MutationPoint.h"
-#include "mull/Mutators/Mutator.h"
 #include "mull/JunkDetection/CXX/Visitors/BinaryVisitor.h"
 #include "mull/JunkDetection/CXX/Visitors/NegateConditionVisitor.h"
 #include "mull/JunkDetection/CXX/Visitors/RemoveVoidFunctionVisitor.h"
 #include "mull/JunkDetection/CXX/Visitors/ReplaceCallVisitor.h"
+#include "mull/JunkDetection/CXX/Visitors/ReplaceHalideCallVisitor.h"
 #include "mull/JunkDetection/CXX/Visitors/ScalarValueVisitor.h"
 #include "mull/JunkDetection/CXX/Visitors/UnaryVisitor.h"
 #include "mull/JunkDetection/CXX/Visitors/VarDeclVisitor.h"
+#include "mull/MutationPoint.h"
+#include "mull/Mutators/CXX/RemoveNegation.h"
+#include "mull/Mutators/Mutator.h"
 
 using namespace mull;
 
@@ -22,6 +22,91 @@ static const clang::Stmt *findMutantExpression(MutationPoint *point,
                                                VisitorParameters &visitorParameters,
                                                clang::Decl *decl) {
   switch (point->getMutator()->mutatorKind()) {
+
+  // TODO add mutations
+  case MutatorKind::Halide_ReplaceHalideAddToMulCall: {
+    //
+    ReplaceHalideCallVisitor visitor(visitorParameters);
+    visitor.TraverseDecl(decl);
+    return visitor.foundMutant();
+  }
+
+  case MutatorKind::Halide_ReplaceHalideAddToSubCall: {
+    ReplaceHalideCallVisitor visitor(visitorParameters);
+    visitor.TraverseDecl(decl);
+    return visitor.foundMutant();
+  }
+
+  case MutatorKind::Halide_ReplaceHalideAddToDivCall: {
+    //
+    ReplaceHalideCallVisitor visitor(visitorParameters);
+    visitor.TraverseDecl(decl);
+    return visitor.foundMutant();
+  }
+
+  case MutatorKind::Halide_ReplaceHalideSubToMulCall: {
+    //
+    ReplaceHalideCallVisitor visitor(visitorParameters);
+    visitor.TraverseDecl(decl);
+    return visitor.foundMutant();
+  }
+
+  case MutatorKind::Halide_ReplaceHalideSubToAddCall: {
+    //
+    ReplaceHalideCallVisitor visitor(visitorParameters);
+    visitor.TraverseDecl(decl);
+    return visitor.foundMutant();
+  }
+
+  case MutatorKind::Halide_ReplaceHalideSubToDivCall: {
+    //
+    ReplaceHalideCallVisitor visitor(visitorParameters);
+    visitor.TraverseDecl(decl);
+    return visitor.foundMutant();
+  }
+
+  case MutatorKind::Halide_ReplaceHalideMulToAddCall: {
+    //
+    ReplaceHalideCallVisitor visitor(visitorParameters);
+    visitor.TraverseDecl(decl);
+    return visitor.foundMutant();
+  }
+
+  case MutatorKind::Halide_ReplaceHalideMulToSubCall: {
+    //
+    ReplaceHalideCallVisitor visitor(visitorParameters);
+    visitor.TraverseDecl(decl);
+    return visitor.foundMutant();
+  }
+
+  case MutatorKind::Halide_ReplaceHalideMulToDivCall: {
+    //
+    ReplaceHalideCallVisitor visitor(visitorParameters);
+    visitor.TraverseDecl(decl);
+    return visitor.foundMutant();
+  }
+
+  case MutatorKind::Halide_ReplaceHalideDivToMulCall: {
+    //
+    ReplaceHalideCallVisitor visitor(visitorParameters);
+    visitor.TraverseDecl(decl);
+    return visitor.foundMutant();
+  }
+
+  case MutatorKind::Halide_ReplaceHalideDivToSubCall: {
+    //
+    ReplaceHalideCallVisitor visitor(visitorParameters);
+    visitor.TraverseDecl(decl);
+    return visitor.foundMutant();
+  }
+
+  case MutatorKind::Halide_ReplaceHalideDivToAddCall: {
+    //
+    ReplaceHalideCallVisitor visitor(visitorParameters);
+    visitor.TraverseDecl(decl);
+    return visitor.foundMutant();
+  }
+
   case MutatorKind::CXX_RemoveVoidCall: {
     RemoveVoidFunctionVisitor visitor(visitorParameters);
     visitor.TraverseDecl(decl);
@@ -187,23 +272,37 @@ static const clang::Stmt *findMutantExpression(MutationPoint *point,
 }
 
 bool CXXJunkDetector::isJunk(MutationPoint *point) {
+
   if (point->getSourceLocation().isNull()) {
+    std::cout << "\npoint->getMutatorIdentifier():" << point->getMutatorIdentifier()
+              << "\nJunk because source location is null\n"
+              << std::endl;
     return true;
   }
 
   ThreadSafeASTUnit *ast = astStorage.findAST(point->getSourceLocation());
   if (!ast->hasAST()) {
+    std::cout << "\npoint->getMutatorIdentifier():" << point->getMutatorIdentifier() << "\n"
+              << "\nDoesn't have AST\n"
+              << std::endl;
     return true;
   }
   clang::SourceLocation location = ast->getLocation(point->getSourceLocation());
   clang::SourceManager &sourceManager = ast->getSourceManager();
 
-  if (ast->isInSystemHeader(location)) {
+  // if it is  halide mutator, then skip it
+  if (ast->isInSystemHeader(location) && point->getMutatorIdentifier() != "Halide_Mutators") {
+    std::cout << "\npoint->getMutatorIdentifier():" << point->getMutatorIdentifier()
+              << "\nIs in system header\n"
+              << std::endl;
     return true;
   }
 
   clang::Decl *decl = ast->getDecl(location);
   if (!decl) {
+    std::cout << "\npoint->getMutatorIdentifier():" << point->getMutatorIdentifier()
+              << "\nNot Decl\n"
+              << std::endl;
     return true;
   }
 
@@ -214,6 +313,9 @@ bool CXXJunkDetector::isJunk(MutationPoint *point) {
   const clang::Stmt *mutantExpression = findMutantExpression(point, visitorParameters, decl);
 
   if (!mutantExpression) {
+    std::cout << "\npoint->getMutatorIdentifier():" << point->getMutatorIdentifier()
+              << "\nNot mutant expression\n"
+              << std::endl;
     return true;
   }
 
@@ -251,11 +353,12 @@ bool CXXJunkDetector::isJunk(MutationPoint *point) {
 
   const std::string &sourceFile = point->getSourceLocation().filePath;
   std::string description = MutationKindToString(point->getMutator()->mutatorKind());
-  diagnostics.debug(std::string("CXXJunkDetector: mutation \"") + description + "\": " + sourceFile + ":" +
-                    std::to_string(mutationLocationBeginLine) + ":" +
+  diagnostics.debug(std::string("CXXJunkDetector: mutation \"") + description +
+                    "\": " + sourceFile + ":" + std::to_string(mutationLocationBeginLine) + ":" +
                     std::to_string(mutationLocationBeginColumn) +
                     " (end: " + std::to_string(endLine) + ":" + std::to_string(endColumn) + ")");
 
   point->setEndLocation(endLine, endColumn);
+
   return false;
 }
