@@ -13,6 +13,8 @@
 #include "mull/Mutators/NegateConditionMutator.h"
 #include "mull/Mutators/ScalarValueMutator.h"
 #include <llvm/ADT/STLExtras.h>
+#include <mull/Mutators/CXX/HalideMutators.h>
+#include <mull/Mutators/CXX/HalideTempMutators.h>
 #include <sstream>
 #include <unordered_set>
 
@@ -66,6 +68,10 @@ static string CXX_Default() {
   return "cxx_default";
 }
 
+static string Halide_Mutator() {
+  return "halide_mutator";
+}
+
 static void expandGroups(Diagnostics &diagnostics, const vector<string> &groups,
                          const map<string, vector<string>> &mapping,
                          unordered_set<string> &expandedGroups) {
@@ -85,6 +91,18 @@ static void expandGroups(Diagnostics &diagnostics, const vector<string> &groups,
 }
 
 MutatorsFactory::MutatorsFactory(Diagnostics &diagnostics) : diagnostics(diagnostics) {
+
+  // TODO add mutators
+  groupsMapping[Halide_Mutator()] = {
+    cxx::ReplaceHalideAddToMulCall::ID(), cxx::ReplaceHalideAddToSubCall::ID(),
+    cxx::ReplaceHalideAddToDivCall::ID(), cxx::ReplaceHalideSubToMulCall::ID(),
+    cxx::ReplaceHalideSubToAddCall::ID(), cxx::ReplaceHalideSubToDivCall::ID(),
+    cxx::ReplaceHalideMulToAddCall::ID(), cxx::ReplaceHalideMulToSubCall::ID(),
+    cxx::ReplaceHalideMulToDivCall::ID(), cxx::ReplaceHalideDivToMulCall::ID(),
+    cxx::ReplaceHalideDivToSubCall::ID(), cxx::ReplaceHalideDivToAddCall::ID()
+
+  };
+
   groupsMapping[CXX_Calls()] = { cxx::RemoveVoidCall::ID(), cxx::ReplaceScalarCall::ID() };
 
   groupsMapping[CXX_Const_Assignment()] = {
@@ -164,14 +182,13 @@ MutatorsFactory::MutatorsFactory(Diagnostics &diagnostics) : diagnostics(diagnos
     CXX_Const_Assignment(),
   };
 
-  groupsMapping[CXX_All()] = { CXX_Assignment(), CXX_Increment(), CXX_Decrement(), CXX_Arithmetic(),
-                               CXX_Comparison(), CXX_Boundary(),  CXX_Bitwise(),   CXX_Calls() };
+  groupsMapping[CXX_All()] = { CXX_Assignment(), CXX_Increment(),  CXX_Decrement(),
+                               CXX_Arithmetic(), CXX_Comparison(), CXX_Boundary(),
+                               CXX_Bitwise(),    CXX_Calls(),      Halide_Mutator() };
 
   groupsMapping[CXX_Default()] = {
-    CXX_Increment(),
-    CXX_Arithmetic(),
-    CXX_Comparison(),
-    CXX_Boundary(),
+    CXX_Increment(), CXX_Arithmetic(), CXX_Comparison(),
+    CXX_Boundary(),  CXX_Calls(),      Halide_Mutator(),
   };
 
   groupsMapping[Experimental()] = { NegateConditionMutator::ID(),
@@ -238,6 +255,19 @@ void MutatorsFactory::init() {
   addMutator<cxx::LessThanToLessOrEqual>(mutatorsMapping);
   addMutator<cxx::GreaterOrEqualToGreaterThan>(mutatorsMapping);
   addMutator<cxx::GreaterThanToGreaterOrEqual>(mutatorsMapping);
+  // TODO add mutators
+  addMutator<cxx::ReplaceHalideAddToMulCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideAddToSubCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideAddToDivCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideSubToMulCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideSubToAddCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideSubToDivCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideMulToAddCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideMulToSubCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideMulToDivCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideDivToAddCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideDivToSubCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideDivToMulCall>(mutatorsMapping);
 }
 
 Mutator *MutatorsFactory::getMutator(const string &mutatorId) {

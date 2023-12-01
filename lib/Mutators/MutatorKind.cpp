@@ -143,6 +143,43 @@ std::string MutationKindToString(MutatorKind mutatorKind) {
   case MutatorKind::CXX_RemoveNegation: {
     return "Remove Unary Negation";
   }
+  // TODO add mutators
+  case MutatorKind::Halide_ReplaceHalideAddToMulCall: {
+    return "Halide: Add to Mul";
+  }
+  case MutatorKind::Halide_ReplaceHalideAddToSubCall: {
+    return "Halide: Add to Sub";
+  }
+  case MutatorKind::Halide_ReplaceHalideAddToDivCall: {
+    return "Halide: Add to Div";
+  }
+  case MutatorKind::Halide_ReplaceHalideSubToAddCall: {
+    return "Halide: Sub to Add";
+  }
+  case MutatorKind::Halide_ReplaceHalideSubToMulCall: {
+    return "Halide: Sub to Mul";
+  }
+  case MutatorKind::Halide_ReplaceHalideSubToDivCall: {
+    return "Halide: Sub to Div";
+  }
+  case MutatorKind::Halide_ReplaceHalideMulToAddCall: {
+    return "Halide: Mul to Add";
+  }
+  case MutatorKind::Halide_ReplaceHalideMulToSubCall: {
+    return "Halide: Mul to Sub";
+  }
+  case MutatorKind::Halide_ReplaceHalideMulToDivCall: {
+    return "Halide: Mul to Div";
+  }
+  case MutatorKind::Halide_ReplaceHalideDivToAddCall: {
+    return "Halide: Div to Add";
+  }
+  case MutatorKind::Halide_ReplaceHalideDivToSubCall: {
+    return "Halide: Div to Sub";
+  }
+  case MutatorKind::Halide_ReplaceHalideDivToMulCall: {
+    return "Halide: Div to Mul";
+  }
   }
 }
 

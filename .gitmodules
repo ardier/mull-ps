@@ -4,8 +4,8 @@
 	branch = master
 [submodule "vendor/libirm"]
 	path = vendor/libirm
-	url = https://github.com/mull-project/libirm.git
-	branch = main
+	url = https://github.com/ardier/libirm-halide/libirm.git
+	branch = mainhalide-mutants
 [submodule "vendor/spdlog"]
 	path = vendor/spdlog
 	url = https://github.com/gabime/spdlog.git
