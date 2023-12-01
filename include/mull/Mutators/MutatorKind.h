@@ -71,6 +71,23 @@ enum class MutatorKind {
   CXX_InitConst,
 
   CXX_RemoveNegation,
+  // TODO add mutations
+  Halide_ReplaceHalideAddToMulCall,
+  Halide_ReplaceHalideAddToSubCall,
+  Halide_ReplaceHalideAddToDivCall,
+
+  Halide_ReplaceHalideSubToAddCall,
+  Halide_ReplaceHalideSubToMulCall,
+  Halide_ReplaceHalideSubToDivCall,
+
+  Halide_ReplaceHalideMulToAddCall,
+  Halide_ReplaceHalideMulToSubCall,
+  Halide_ReplaceHalideMulToDivCall,
+
+  Halide_ReplaceHalideDivToMulCall,
+  Halide_ReplaceHalideDivToSubCall,
+  Halide_ReplaceHalideDivToAddCall
+
 };
 
 std::string MutationKindToString(MutatorKind mutatorKind);
@@ -92,8 +109,9 @@ class MutatorKindSet {
 public:
   static MutatorKindSet create(std::vector<MutatorKind> mutators);
   bool includesMutator(mull::MutatorKind mutatorKind) const;
+
 private:
   MutatorKindSet(std::unordered_set<mull::MutatorKind> mutators);
   std::unordered_set<mull::MutatorKind> mutators;
 };
-}
+} // namespace mull
