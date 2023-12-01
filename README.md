@@ -3,11 +3,12 @@
 This set of instructions is intended to:
 1.	Set up the correct version of LLVM for mutation using Mull on your system
 2.	Pull, build and set up `Mull`
+3.  Directions to define Halide Mutants
 
 ### Requirements
 - A MacBook running Ventura or Sonoma (not tested on other systems)
 - Homebrew
-- Git SSH keys to be registered with both GitHub enterprise and GitHub
+- Git SSH keys to be registered with GitHub
 
 ## Cloning
 Make sure to clone using the recursive flag as follows:
@@ -61,3 +62,23 @@ If the above steps have been executed correctly, your output folder should look 
 You can copy this folder to where your project exists and modify your project for mutation. 
 ### Note on mull.yml
 This file should reside at the top directory of your mutated project.
+
+## Implementing Halide Mutation operators
+Here is a list of files that need to be modified to add a new type mutation operators:
+```
+include/mull/JunkDetection/CXX/Visitors/ReplaceHalideCallVisitor.h
+include/mull/Mutators/CXX/HalideMutators.h
+include/mull/Mutators/CXX/HalideMutators.h
+lib/CMakeLists.txt (in two places see git history)
+lib/JunkDetection/CXX/Visitors/ReplaceHalideCallVisitor.cpp
+lib/Mutators/CXX/HalideMutators.cpp
+include/mull/Mutators/MutatorKind.h
+lib/Mutators/MutatorKind.cpp
+lib/Mutators/MutatorsFactory.cpp
+lib/Mutators/MutatorsFactory.cpp
+.gitmodules (or update the submodule manually)
+lib/JunkDetection/CXX/CXXJunkDetector.cpp
+```
+Depending on your implementation, you may not need to edit all these files.
+
+You will also need to change files in the [mull-librim](https://github.com/ardier/libirm-halide/tree/halide-mutants) library for this to work. The list can be found in the README of my fork of that library. 
