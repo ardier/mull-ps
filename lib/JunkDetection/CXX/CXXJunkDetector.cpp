@@ -13,7 +13,19 @@
 #include "mull/Mutators/CXX/RemoveNegation.h"
 #include "mull/Mutators/Mutator.h"
 
+#include <string>
+
 using namespace mull;
+
+/// Every Halide mutator's identifier is built from this prefix
+/// (Halide_add_to_sub, Halide_mul_to_div, ...), see
+/// lib/Mutators/CXX/HalideMutators.cpp. Matching on the prefix keeps newly
+/// added operators exempt without another edit here.
+static const char *const kHalideMutatorPrefix = "Halide_";
+
+static bool isHalideMutator(const std::string &mutatorIdentifier) {
+  return mutatorIdentifier.rfind(kHalideMutatorPrefix, 0) == 0;
+}
 
 CXXJunkDetector::CXXJunkDetector(Diagnostics &diagnostics, ASTStorage &astStorage)
     : diagnostics(diagnostics), astStorage(astStorage) {}
@@ -272,37 +284,39 @@ static const clang::Stmt *findMutantExpression(MutationPoint *point,
 }
 
 bool CXXJunkDetector::isJunk(MutationPoint *point) {
+  const std::string mutatorIdentifier = point->getMutatorIdentifier();
 
   if (point->getSourceLocation().isNull()) {
-    std::cout << "\npoint->getMutatorIdentifier():" << point->getMutatorIdentifier()
-              << "\nJunk because source location is null\n"
-              << std::endl;
+    diagnostics.debug("CXXJunkDetector: [" + mutatorIdentifier +
+                      "] junk: source location is null");
     return true;
   }
 
   ThreadSafeASTUnit *ast = astStorage.findAST(point->getSourceLocation());
   if (!ast->hasAST()) {
-    std::cout << "\npoint->getMutatorIdentifier():" << point->getMutatorIdentifier() << "\n"
-              << "\nDoesn't have AST\n"
-              << std::endl;
+    diagnostics.debug("CXXJunkDetector: [" + mutatorIdentifier + "] junk: no AST available");
     return true;
   }
   clang::SourceLocation location = ast->getLocation(point->getSourceLocation());
   clang::SourceManager &sourceManager = ast->getSourceManager();
 
-  // if it is  halide mutator, then skip it
-  if (ast->isInSystemHeader(location) && point->getMutatorIdentifier() != "Halide_Mutators") {
-    std::cout << "\npoint->getMutatorIdentifier():" << point->getMutatorIdentifier()
-              << "\nIs in system header\n"
-              << std::endl;
+  /// Halide mutation points legitimately land in system headers: the operators
+  /// being replaced are Halide's own inline/templated API, so the call site
+  /// Mull resolves is inside Halide's headers rather than the generator source.
+  /// Exempt them from the system-header filter.
+  ///
+  /// This previously compared the identifier against "Halide_Mutators", a name
+  /// from the single-mutator prototype that no per-operator identifier has ever
+  /// matched, so the exemption was dead and every Halide point in a header was
+  /// discarded as junk.
+  if (ast->isInSystemHeader(location) && !isHalideMutator(mutatorIdentifier)) {
+    diagnostics.debug("CXXJunkDetector: [" + mutatorIdentifier + "] junk: in system header");
     return true;
   }
 
   clang::Decl *decl = ast->getDecl(location);
   if (!decl) {
-    std::cout << "\npoint->getMutatorIdentifier():" << point->getMutatorIdentifier()
-              << "\nNot Decl\n"
-              << std::endl;
+    diagnostics.debug("CXXJunkDetector: [" + mutatorIdentifier + "] junk: no enclosing decl");
     return true;
   }
 
@@ -313,9 +327,8 @@ bool CXXJunkDetector::isJunk(MutationPoint *point) {
   const clang::Stmt *mutantExpression = findMutantExpression(point, visitorParameters, decl);
 
   if (!mutantExpression) {
-    std::cout << "\npoint->getMutatorIdentifier():" << point->getMutatorIdentifier()
-              << "\nNot mutant expression\n"
-              << std::endl;
+    diagnostics.debug("CXXJunkDetector: [" + mutatorIdentifier +
+                      "] junk: no matching mutant expression");
     return true;
   }
 
