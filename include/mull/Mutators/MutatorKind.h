@@ -104,7 +104,8 @@ enum class MutatorKind {
 
   /// Halide special-function-call argument swaps (AST route).
   Halide_SelectSwapBranches,
-  Halide_ClampSwapBounds
+  Halide_ClampSwapBounds,
+  Halide_SelectToIfThenElse
 
 };
 

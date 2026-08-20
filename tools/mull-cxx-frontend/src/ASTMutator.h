@@ -13,6 +13,7 @@ class ReplaceNumericAssignmentMutation;
 class ReplaceNumericInitAssignmentMutation;
 class HalideCalleeSwapMutation;
 class HalideArgumentSwapMutation;
+class HalideSelectToIfThenElseMutation;
 
 class ASTMutator {
 public:
@@ -46,6 +47,10 @@ public:
   virtual void
   performHalideArgumentSwapMutation(ASTMutationPoint &mutation,
                                     HalideArgumentSwapMutation &halideArgumentSwapMutation) = 0;
+
+  virtual void performHalideSelectToIfThenElseMutation(
+      ASTMutationPoint &mutation,
+      HalideSelectToIfThenElseMutation &halideSelectToIfThenElseMutation) = 0;
 };
 
 } // namespace cxx

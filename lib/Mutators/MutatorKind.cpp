@@ -222,6 +222,9 @@ std::string MutationKindToString(MutatorKind mutatorKind) {
   case MutatorKind::Halide_ClampSwapBounds: {
     return "Halide: clamp bounds swapped";
   }
+  case MutatorKind::Halide_SelectToIfThenElse: {
+    return "Halide: select to if_then_else";
+  }
   }
 }
 
