@@ -41,6 +41,9 @@ public:
   void
   performHalideCalleeSwapMutation(ASTMutationPoint &mutation,
                                   HalideCalleeSwapMutation &halideCalleeSwapMutator) override;
+  void
+  performHalideArgumentSwapMutation(ASTMutationPoint &mutation,
+                                    HalideArgumentSwapMutation &halideArgumentSwapMutator) override;
 
 private:
   /// Re-resolves `callExpr`'s callee to `newCalleeName` in the callee's own
@@ -49,6 +52,12 @@ private:
   /// mutation is skipped rather than producing ill-formed AST.
   clang::Expr *buildCalleeSwappedCall(clang::CallExpr *callExpr,
                                       const std::string &newCalleeName);
+
+  /// Rebuilds `callExpr` with the arguments at the two given indices
+  /// exchanged. Returns nullptr when overload resolution fails on the
+  /// reordered arguments, in which case the mutation is skipped.
+  clang::Expr *buildArgumentSwappedCall(clang::CallExpr *callExpr, unsigned firstArgumentIndex,
+                                        unsigned secondArgumentIndex);
 
   clang::ASTContext &context;
   clang::Sema &sema;

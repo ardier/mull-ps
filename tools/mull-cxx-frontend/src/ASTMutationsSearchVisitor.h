@@ -39,6 +39,14 @@ private:
   /// `callExpr`, if any.
   void visitHalideBoundaryConditionsCall(clang::CallExpr *callExpr);
 
+  /// Records the argument-order swaps available at `callExpr` for the Halide
+  /// API calls whose argument order carries domain semantics.
+  void visitHalideSpecialCall(clang::CallExpr *callExpr);
+
+  /// True when the body being searched is part of Halide itself rather than
+  /// part of the code under test.
+  bool isInsideHalideItself() const;
+
   bool isValidMutation(mull::MutatorKind mutatorKind);
   void recordMutationPoint(mull::MutatorKind mutatorKind, std::unique_ptr<ASTMutation> mutation,
                            clang::Stmt *stmt, clang::SourceLocation mutationLocation,

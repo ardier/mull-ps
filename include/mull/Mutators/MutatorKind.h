@@ -110,7 +110,11 @@ enum class MutatorKind {
   Halide_BC_MirrorImageToMirrorInterior,
   Halide_BC_MirrorInteriorToRepeatEdge,
   Halide_BC_MirrorInteriorToRepeatImage,
-  Halide_BC_MirrorInteriorToMirrorImage
+  Halide_BC_MirrorInteriorToMirrorImage,
+
+  /// Halide special-function-call argument swaps (AST route).
+  Halide_SelectSwapBranches,
+  Halide_ClampSwapBounds
 
 };
 
