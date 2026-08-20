@@ -204,6 +204,42 @@ std::string MutationKindToString(MutatorKind mutatorKind) {
   case MutatorKind::Halide_ReplaceStoreAtToComputeAtCall: {
     return "Halide: StoreAt to ComputeAt";
   }
+  case MutatorKind::Halide_BC_RepeatEdgeToRepeatImage: {
+    return "Halide: repeat_edge to repeat_image";
+  }
+  case MutatorKind::Halide_BC_RepeatEdgeToMirrorImage: {
+    return "Halide: repeat_edge to mirror_image";
+  }
+  case MutatorKind::Halide_BC_RepeatEdgeToMirrorInterior: {
+    return "Halide: repeat_edge to mirror_interior";
+  }
+  case MutatorKind::Halide_BC_RepeatImageToRepeatEdge: {
+    return "Halide: repeat_image to repeat_edge";
+  }
+  case MutatorKind::Halide_BC_RepeatImageToMirrorImage: {
+    return "Halide: repeat_image to mirror_image";
+  }
+  case MutatorKind::Halide_BC_RepeatImageToMirrorInterior: {
+    return "Halide: repeat_image to mirror_interior";
+  }
+  case MutatorKind::Halide_BC_MirrorImageToRepeatEdge: {
+    return "Halide: mirror_image to repeat_edge";
+  }
+  case MutatorKind::Halide_BC_MirrorImageToRepeatImage: {
+    return "Halide: mirror_image to repeat_image";
+  }
+  case MutatorKind::Halide_BC_MirrorImageToMirrorInterior: {
+    return "Halide: mirror_image to mirror_interior";
+  }
+  case MutatorKind::Halide_BC_MirrorInteriorToRepeatEdge: {
+    return "Halide: mirror_interior to repeat_edge";
+  }
+  case MutatorKind::Halide_BC_MirrorInteriorToRepeatImage: {
+    return "Halide: mirror_interior to repeat_image";
+  }
+  case MutatorKind::Halide_BC_MirrorInteriorToMirrorImage: {
+    return "Halide: mirror_interior to mirror_image";
+  }
   }
 }
 

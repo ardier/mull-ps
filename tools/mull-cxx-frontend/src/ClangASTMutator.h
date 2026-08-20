@@ -1,5 +1,7 @@
 #pragma once
 
+#include <llvm/ADT/DenseMap.h>
+
 #include <string>
 
 namespace clang {
@@ -36,6 +38,12 @@ public:
   clang::ConditionalOperator *createMutatedExpression(clang::Expr *oldExpr, clang::Expr *newExpr,
                                                       std::string identifier);
   clang::CallExpr *createGetenvCallExpr(std::string identifier);
+
+private:
+  /// For every already-mutated expression, the conditional operator that now
+  /// holds it. Lets a second mutation of the same expression nest inside the
+  /// first one instead of consulting the by-then stale parent map.
+  llvm::DenseMap<clang::Expr *, clang::Stmt *> mutationHolders;
 };
 
 } // namespace cxx

@@ -11,6 +11,7 @@ class UnaryOperatorOpcodeMutation;
 class UnaryOperatorRemovalMutation;
 class ReplaceNumericAssignmentMutation;
 class ReplaceNumericInitAssignmentMutation;
+class HalideCalleeSwapMutation;
 
 class ASTMutator {
 public:
@@ -36,6 +37,10 @@ public:
   virtual void performReplaceNumericInitAssignmentMutation(
       ASTMutationPoint &mutation,
       ReplaceNumericInitAssignmentMutation &replaceNumericInitAssignmentMutation) = 0;
+
+  virtual void
+  performHalideCalleeSwapMutation(ASTMutationPoint &mutation,
+                                  HalideCalleeSwapMutation &halideCalleeSwapMutation) = 0;
 };
 
 } // namespace cxx

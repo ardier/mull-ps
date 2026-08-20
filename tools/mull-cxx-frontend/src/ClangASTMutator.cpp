@@ -12,10 +12,40 @@
 namespace mull {
 namespace cxx {
 
+/// Replaces `oldExpr` by `newExpr` among the direct children of `parentStmt`.
+/// Returns false when `oldExpr` is not (or no longer) a child of it.
+static bool replaceChild(clang::Stmt *parentStmt, clang::Expr *oldExpr, clang::Expr *newExpr) {
+  clang::Stmt::child_iterator childIterator =
+      std::find(parentStmt->child_begin(), parentStmt->child_end(), oldExpr);
+  if (childIterator == parentStmt->child_end()) {
+    return false;
+  }
+  *childIterator = newExpr;
+  return true;
+}
+
 void ClangASTMutator::replaceExpression(clang::Expr *oldExpr, clang::Expr *newExpr,
                                         std::string identifier) {
   clang::ConditionalOperator *conditionalExpr =
       createMutatedExpression(oldExpr, newExpr, identifier);
+
+  /// A single expression can carry more than one mutation (`a < b` is both a
+  /// comparison and a boundary mutation point; a BoundaryConditions call can be
+  /// swapped for each of the three other members of its family). Once the first
+  /// mutation has been spliced in, ASTContext's parent map is stale -- it still
+  /// reports the original parent, which no longer has `oldExpr` among its
+  /// children -- so the mutations after the first one are nested inside the
+  /// conditional built for the previous one instead:
+  ///     getenv(id2) ? new2 : (getenv(id1) ? new1 : old)
+  /// Each mutant stays independently selectable by its own environment variable.
+  clang::Stmt *previousHolder = mutationHolders.lookup(oldExpr);
+  if (previousHolder != nullptr) {
+    bool replaced = replaceChild(previousHolder, oldExpr, conditionalExpr);
+    assert(replaced && "mutated expression vanished from its own mutation conditional");
+    (void)replaced;
+    mutationHolders[oldExpr] = conditionalExpr;
+    return;
+  }
 
   for (auto p : context.getParents(*oldExpr)) {
     if (const clang::Stmt *constParentStmt = p.get<clang::Stmt>()) {
@@ -23,14 +53,15 @@ void ClangASTMutator::replaceExpression(clang::Expr *oldExpr, clang::Expr *newEx
       /// things play against current Clang AST API.
       /// TODO: Find a better way to perform the mutation.
       clang::Stmt *parentStmt = (clang::Stmt *)constParentStmt;
-      clang::Stmt::child_iterator parentChildrenIterator =
-          std::find(parentStmt->child_begin(), parentStmt->child_end(), oldExpr);
-      assert(parentChildrenIterator != parentStmt->child_end());
-      *parentChildrenIterator = conditionalExpr;
+      bool replaced = replaceChild(parentStmt, oldExpr, conditionalExpr);
+      assert(replaced);
+      (void)replaced;
+      mutationHolders[oldExpr] = conditionalExpr;
       return;
     } else if (const clang::VarDecl *constVarDecl = p.get<clang::VarDecl>()) {
       clang::VarDecl *parentVarDecl = (clang::VarDecl *)constVarDecl;
       parentVarDecl->setInit(conditionalExpr);
+      mutationHolders[oldExpr] = conditionalExpr;
       return;
     } else {
       assert(0 && "error: not implemented");

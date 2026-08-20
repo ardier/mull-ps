@@ -17,7 +17,8 @@ namespace cxx {
 class MullASTMutator : public ASTMutator {
 public:
   MullASTMutator(clang::ASTContext &context, clang::Sema &sema)
-      : context(context), factory(context), instrumentation(context, sema, factory),
+      : context(context), sema(sema), factory(context),
+        instrumentation(context, sema, factory),
         clangAstMutator(context, factory, instrumentation) {}
 
   void instrumentTranslationUnit();
@@ -37,9 +38,20 @@ public:
   void performReplaceNumericInitAssignmentMutation(
       ASTMutationPoint &mutation,
       ReplaceNumericInitAssignmentMutation &replaceNumericInitAssignmentMutator) override;
+  void
+  performHalideCalleeSwapMutation(ASTMutationPoint &mutation,
+                                  HalideCalleeSwapMutation &halideCalleeSwapMutator) override;
 
 private:
+  /// Re-resolves `callExpr`'s callee to `newCalleeName` in the callee's own
+  /// DeclContext, keeping the original arguments. Returns nullptr when the
+  /// name does not resolve or overload resolution fails, in which case the
+  /// mutation is skipped rather than producing ill-formed AST.
+  clang::Expr *buildCalleeSwappedCall(clang::CallExpr *callExpr,
+                                      const std::string &newCalleeName);
+
   clang::ASTContext &context;
+  clang::Sema &sema;
   ASTNodeFactory factory;
   ASTInstrumentation instrumentation;
   ClangASTMutator clangAstMutator;

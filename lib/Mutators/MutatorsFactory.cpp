@@ -13,6 +13,7 @@
 #include "mull/Mutators/NegateConditionMutator.h"
 #include "mull/Mutators/ScalarValueMutator.h"
 #include <llvm/ADT/STLExtras.h>
+#include <mull/Mutators/CXX/HalideBoundaryConditionsMutators.h>
 #include <mull/Mutators/CXX/HalideMutators.h>
 #include <sstream>
 #include <unordered_set>
@@ -71,6 +72,13 @@ static string Halide_Mutator() {
   return "halide_mutator";
 }
 
+/// Deliberately not a member of cxx_all / cxx_default: the novel Halide
+/// operators stay opt-in so the legacy arms of the experiment are not
+/// contaminated by them.
+static string Halide_BoundaryConditions() {
+  return "halide_boundary_conditions";
+}
+
 static void expandGroups(Diagnostics &diagnostics, const vector<string> &groups,
                          const map<string, vector<string>> &mapping,
                          unordered_set<string> &expandedGroups) {
@@ -109,6 +117,21 @@ MutatorsFactory::MutatorsFactory(Diagnostics &diagnostics) : diagnostics(diagnos
     cxx::ReplaceHalideParallelToUnrollCall::ID(),
     cxx::ReplaceHalideComputeAtToStoreAtCall::ID(),
     cxx::ReplaceHalideStoreAtToComputeAtCall::ID()
+  };
+
+  groupsMapping[Halide_BoundaryConditions()] = {
+    cxx::HalideRepeatEdgeToRepeatImage::ID(),
+    cxx::HalideRepeatEdgeToMirrorImage::ID(),
+    cxx::HalideRepeatEdgeToMirrorInterior::ID(),
+    cxx::HalideRepeatImageToRepeatEdge::ID(),
+    cxx::HalideRepeatImageToMirrorImage::ID(),
+    cxx::HalideRepeatImageToMirrorInterior::ID(),
+    cxx::HalideMirrorImageToRepeatEdge::ID(),
+    cxx::HalideMirrorImageToRepeatImage::ID(),
+    cxx::HalideMirrorImageToMirrorInterior::ID(),
+    cxx::HalideMirrorInteriorToRepeatEdge::ID(),
+    cxx::HalideMirrorInteriorToRepeatImage::ID(),
+    cxx::HalideMirrorInteriorToMirrorImage::ID(),
   };
 
   groupsMapping[CXX_Calls()] = { cxx::RemoveVoidCall::ID(), cxx::ReplaceScalarCall::ID() };
@@ -291,6 +314,20 @@ void MutatorsFactory::init() {
   addMutator<cxx::ReplaceHalideParallelToUnrollCall>(mutatorsMapping);
   addMutator<cxx::ReplaceHalideComputeAtToStoreAtCall>(mutatorsMapping);
   addMutator<cxx::ReplaceHalideStoreAtToComputeAtCall>(mutatorsMapping);
+
+  /// Halide BoundaryConditions swaps (AST route only).
+  addMutator<cxx::HalideRepeatEdgeToRepeatImage>(mutatorsMapping);
+  addMutator<cxx::HalideRepeatEdgeToMirrorImage>(mutatorsMapping);
+  addMutator<cxx::HalideRepeatEdgeToMirrorInterior>(mutatorsMapping);
+  addMutator<cxx::HalideRepeatImageToRepeatEdge>(mutatorsMapping);
+  addMutator<cxx::HalideRepeatImageToMirrorImage>(mutatorsMapping);
+  addMutator<cxx::HalideRepeatImageToMirrorInterior>(mutatorsMapping);
+  addMutator<cxx::HalideMirrorImageToRepeatEdge>(mutatorsMapping);
+  addMutator<cxx::HalideMirrorImageToRepeatImage>(mutatorsMapping);
+  addMutator<cxx::HalideMirrorImageToMirrorInterior>(mutatorsMapping);
+  addMutator<cxx::HalideMirrorInteriorToRepeatEdge>(mutatorsMapping);
+  addMutator<cxx::HalideMirrorInteriorToRepeatImage>(mutatorsMapping);
+  addMutator<cxx::HalideMirrorInteriorToMirrorImage>(mutatorsMapping);
 }
 
 Mutator *MutatorsFactory::getMutator(const string &mutatorId) {
