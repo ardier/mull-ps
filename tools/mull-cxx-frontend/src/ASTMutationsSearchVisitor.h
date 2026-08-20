@@ -2,6 +2,7 @@
 
 #include "ASTMutationPoint.h"
 
+#include <clang/AST/Decl.h>
 #include <clang/AST/RecursiveASTVisitor.h>
 
 namespace mull {
@@ -14,11 +15,16 @@ class ASTMutationsSearchVisitor : public clang::RecursiveASTVisitor<ASTMutations
   clang::SourceManager &sourceManager;
   std::vector<std::unique_ptr<ASTMutationPoint>> astMutations;
   MutationMap &mutationMap;
+  const clang::FunctionDecl *enclosingFunction;
 
 public:
-  ASTMutationsSearchVisitor(clang::ASTContext &context, MutationMap &mutationMap)
+  /// `enclosingFunction` is the function whose body is being searched. Some
+  /// mutations need it to tell a call written by the user apart from a call
+  /// that a library makes to itself.
+  ASTMutationsSearchVisitor(clang::ASTContext &context, MutationMap &mutationMap,
+                            const clang::FunctionDecl *enclosingFunction = nullptr)
       : context(context), sourceManager(context.getSourceManager()), astMutations(),
-        mutationMap(mutationMap) {}
+        mutationMap(mutationMap), enclosingFunction(enclosingFunction) {}
 
   std::vector<std::unique_ptr<ASTMutationPoint>> &getAstMutations();
 
@@ -29,6 +35,10 @@ public:
   bool VisitVarDecl(clang::VarDecl *D);
 
 private:
+  /// Records the Halide::BoundaryConditions family swaps available at
+  /// `callExpr`, if any.
+  void visitHalideBoundaryConditionsCall(clang::CallExpr *callExpr);
+
   bool isValidMutation(mull::MutatorKind mutatorKind);
   void recordMutationPoint(mull::MutatorKind mutatorKind, std::unique_ptr<ASTMutation> mutation,
                            clang::Stmt *stmt, clang::SourceLocation mutationLocation,

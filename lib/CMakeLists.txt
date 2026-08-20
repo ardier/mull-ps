@@ -19,6 +19,7 @@ set(mull_sources
   Mutators/NegateConditionMutator.cpp
   Mutators/ScalarValueMutator.cpp
   Mutators/CXX/HalideMutators.cpp
+  Mutators/CXX/HalideBoundaryConditionsMutators.cpp
 
   Runner.cpp
 

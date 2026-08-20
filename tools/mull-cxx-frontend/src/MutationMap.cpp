@@ -1,6 +1,9 @@
 #include "MutationMap.h"
 
 #include <cassert>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace mull {
 namespace cxx {
@@ -49,6 +52,21 @@ static const std::vector<MutationIdentifier> MUTATIONS_MAP({
     { "cxx_assign_const", mull::MutatorKind::CXX_AssignConst },
     { "cxx_init_const", mull::MutatorKind::CXX_InitConst },
     { "cxx_replace_scalar_call", mull::MutatorKind::CXX_ReplaceScalarCall },
+
+    /// Halide BoundaryConditions family swap. Opt-in only (group
+    /// halide_boundary_conditions), hence enabledByDefault = false.
+    { "Halide_repeat_edge_to_repeat_image", mull::MutatorKind::Halide_BC_RepeatEdgeToRepeatImage, false },
+    { "Halide_repeat_edge_to_mirror_image", mull::MutatorKind::Halide_BC_RepeatEdgeToMirrorImage, false },
+    { "Halide_repeat_edge_to_mirror_interior", mull::MutatorKind::Halide_BC_RepeatEdgeToMirrorInterior, false },
+    { "Halide_repeat_image_to_repeat_edge", mull::MutatorKind::Halide_BC_RepeatImageToRepeatEdge, false },
+    { "Halide_repeat_image_to_mirror_image", mull::MutatorKind::Halide_BC_RepeatImageToMirrorImage, false },
+    { "Halide_repeat_image_to_mirror_interior", mull::MutatorKind::Halide_BC_RepeatImageToMirrorInterior, false },
+    { "Halide_mirror_image_to_repeat_edge", mull::MutatorKind::Halide_BC_MirrorImageToRepeatEdge, false },
+    { "Halide_mirror_image_to_repeat_image", mull::MutatorKind::Halide_BC_MirrorImageToRepeatImage, false },
+    { "Halide_mirror_image_to_mirror_interior", mull::MutatorKind::Halide_BC_MirrorImageToMirrorInterior, false },
+    { "Halide_mirror_interior_to_repeat_edge", mull::MutatorKind::Halide_BC_MirrorInteriorToRepeatEdge, false },
+    { "Halide_mirror_interior_to_repeat_image", mull::MutatorKind::Halide_BC_MirrorInteriorToRepeatImage, false },
+    { "Halide_mirror_interior_to_mirror_image", mull::MutatorKind::Halide_BC_MirrorInteriorToMirrorImage, false },
 });
 
 MutationMap::MutationMap() : usedMutatorSet(), mapKindsToIdentifiers(), mapIdentifiersToKinds() {
@@ -67,9 +85,45 @@ std::string MutationMap::getIdentifier(mull::MutatorKind mutatorKind) {
   return mapKindsToIdentifiers[mutatorKind];
 }
 
+/// Mutator groups this frontend understands by name. mull.yml is shared with
+/// mull-ir-frontend and mull-runner, whose groups live in MutatorsFactory; that
+/// lives in libmull, which a Clang plugin does not link, so the groups whose
+/// members are implemented here are mirrored. Keep in sync with
+/// lib/Mutators/MutatorsFactory.cpp.
+static const std::vector<std::pair<std::string, std::vector<std::string>>> MUTATION_GROUPS({
+    { "halide_boundary_conditions",
+      { "Halide_repeat_edge_to_repeat_image",
+        "Halide_repeat_edge_to_mirror_image",
+        "Halide_repeat_edge_to_mirror_interior",
+        "Halide_repeat_image_to_repeat_edge",
+        "Halide_repeat_image_to_mirror_image",
+        "Halide_repeat_image_to_mirror_interior",
+        "Halide_mirror_image_to_repeat_edge",
+        "Halide_mirror_image_to_repeat_image",
+        "Halide_mirror_image_to_mirror_interior",
+        "Halide_mirror_interior_to_repeat_edge",
+        "Halide_mirror_interior_to_repeat_image",
+        "Halide_mirror_interior_to_mirror_image" } },
+});
+
 void MutationMap::addMutation(std::string identifier) {
-  assert(mapIdentifiersToKinds.count(identifier) != 0);
-  usedMutatorSet.insert(mapIdentifiersToKinds[identifier]);
+  for (const auto &group : MUTATION_GROUPS) {
+    if (group.first != identifier) {
+      continue;
+    }
+    for (const std::string &member : group.second) {
+      addMutation(member);
+    }
+    return;
+  }
+
+  /// Identifiers naming a mutator only the IR frontend implements are silently
+  /// ignored: both frontends read the same mull.yml.
+  auto mutatorKind = mapIdentifiersToKinds.find(identifier);
+  if (mutatorKind == mapIdentifiersToKinds.end()) {
+    return;
+  }
+  usedMutatorSet.insert(mutatorKind->second);
 }
 
 void MutationMap::setDefaultMutationsIfNotSpecified() {
@@ -77,8 +131,23 @@ void MutationMap::setDefaultMutationsIfNotSpecified() {
     return;
   }
   for (const MutationIdentifier &mutationIdentifier : MUTATIONS_MAP) {
+    if (!mutationIdentifier.enabledByDefault) {
+      continue;
+    }
     usedMutatorSet.insert(mutationIdentifier.mutatorKind);
   }
+}
+
+bool MutationMap::needsDeepDeclTraversal() const {
+  for (const MutationIdentifier &mutationIdentifier : MUTATIONS_MAP) {
+    if (mutationIdentifier.enabledByDefault) {
+      continue;
+    }
+    if (usedMutatorSet.count(mutationIdentifier.mutatorKind) > 0) {
+      return true;
+    }
+  }
+  return false;
 }
 
 } // namespace cxx

@@ -86,7 +86,21 @@ enum class MutatorKind {
 
   Halide_ReplaceHalideDivToMulCall,
   Halide_ReplaceHalideDivToSubCall,
-  Halide_ReplaceHalideDivToAddCall
+  Halide_ReplaceHalideDivToAddCall,
+
+  /// Halide BoundaryConditions family swap (AST route, mull-cxx-frontend).
+  Halide_BC_RepeatEdgeToRepeatImage,
+  Halide_BC_RepeatEdgeToMirrorImage,
+  Halide_BC_RepeatEdgeToMirrorInterior,
+  Halide_BC_RepeatImageToRepeatEdge,
+  Halide_BC_RepeatImageToMirrorImage,
+  Halide_BC_RepeatImageToMirrorInterior,
+  Halide_BC_MirrorImageToRepeatEdge,
+  Halide_BC_MirrorImageToRepeatImage,
+  Halide_BC_MirrorImageToMirrorInterior,
+  Halide_BC_MirrorInteriorToRepeatEdge,
+  Halide_BC_MirrorInteriorToRepeatImage,
+  Halide_BC_MirrorInteriorToMirrorImage
 
 };
 

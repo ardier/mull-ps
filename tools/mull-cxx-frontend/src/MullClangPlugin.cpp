@@ -51,35 +51,72 @@ public:
     }
 
     for (DeclGroupRef::iterator I = DG.begin(), E = DG.end(); I != E; ++I) {
-      if ((*I)->getKind() != Decl::Function) {
+      if ((*I)->getKind() == Decl::Function) {
+        mutateFunction(static_cast<FunctionDecl *>(*I));
         continue;
       }
-
-      FunctionDecl *f = static_cast<FunctionDecl *>(*I);
-      if (f->getDeclName().getAsString() == "main") {
-        continue;
-      }
-
-      clang::SourceLocation functionLocation = f->getLocation();
-      if (instance.getSourceManager().isInSystemHeader(functionLocation)) {
-        continue;
-      }
-      std::string sourceFilePath = instance.getSourceManager().getFilename(functionLocation).str();
-      if (sourceFilePath.find("include/gtest") != std::string::npos) {
-        continue;
-      }
-      ASTMutationsSearchVisitor visitor(instance.getASTContext(), mutationMap);
-      errs() << "HandleTopLevelDecl: Looking at function: " << f->getDeclName() << "\n";
-      visitor.TraverseFunctionDecl(f);
-
-      for (auto &foundMutation : visitor.getAstMutations()) {
-        foundMutation->performMutation(*astMutator);
+      /// Halide generators put all of their code in the generate() method of a
+      /// class, usually inside an anonymous namespace, so none of it is ever a
+      /// top-level function declaration. Descending into namespaces and class
+      /// bodies is what makes those bodies reachable at all. It is gated on an
+      /// opt-in mutator being enabled so that the mutators that have only ever
+      /// been applied to top-level functions keep behaving exactly as before.
+      if (mutationMap.needsDeepDeclTraversal()) {
+        mutateNestedFunctions(*I);
       }
     }
 
     return true;
   }
 
+private:
+  /// Recurses through the declaration contexts that can lexically contain a
+  /// function definition, mutating every function body found on the way.
+  void mutateNestedFunctions(Decl *decl) {
+    if (FunctionDecl *f = dyn_cast<FunctionDecl>(decl)) {
+      /// Only definitions written in this source have anything to mutate;
+      /// template instantiations share their pattern's source locations and
+      /// would produce duplicate mutation points.
+      if (f->doesThisDeclarationHaveABody() && !f->isTemplateInstantiation()) {
+        mutateFunction(f);
+      }
+      return;
+    }
+    if (!isa<NamespaceDecl>(decl) && !isa<CXXRecordDecl>(decl) && !isa<LinkageSpecDecl>(decl)) {
+      return;
+    }
+    auto *declContext = dyn_cast<DeclContext>(decl);
+    if (declContext == nullptr) {
+      return;
+    }
+    for (Decl *nested : declContext->decls()) {
+      mutateNestedFunctions(nested);
+    }
+  }
+
+  void mutateFunction(FunctionDecl *f) {
+    if (f->getDeclName().getAsString() == "main") {
+      return;
+    }
+
+    clang::SourceLocation functionLocation = f->getLocation();
+    if (instance.getSourceManager().isInSystemHeader(functionLocation)) {
+      return;
+    }
+    std::string sourceFilePath = instance.getSourceManager().getFilename(functionLocation).str();
+    if (sourceFilePath.find("include/gtest") != std::string::npos) {
+      return;
+    }
+    ASTMutationsSearchVisitor visitor(instance.getASTContext(), mutationMap, f);
+    errs() << "HandleTopLevelDecl: Looking at function: " << f->getDeclName() << "\n";
+    visitor.TraverseFunctionDecl(f);
+
+    for (auto &foundMutation : visitor.getAstMutations()) {
+      foundMutation->performMutation(*astMutator);
+    }
+  }
+
+public:
   // This method is the last to be called when all declarations have already
   // been called on with HandleTopLevelDecl(). At this point, it is possible to
   // visualize the final mutated AST tree.
