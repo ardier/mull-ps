@@ -105,9 +105,10 @@ from every TU in the corpus, and would otherwise silently no-op.
 
 ### `compute_at` / `store_at`
 
-`(LoopLevel)` forms are signature-compatible with each other; so are the
-`(Func const &, Var const &)` forms. `compute_at` additionally has an `RVar`
-overload with no `store_at` counterpart — exclude it.
+Halide defines both over the **same three parameter lists**, so every mapping
+has a counterpart and no swap can synthesise a name `libHalide` does not
+define. (An earlier revision of this file claimed `store_at` lacked the `RVar`
+overload — it does not; checked against `libHalide.so.16.0.0`.)
 
 | API | Mangled name |
 |---|---|
@@ -115,7 +116,38 @@ overload with no `store_at` counterpart — exclude it.
 | `Func::store_at(LoopLevel)` | `_ZN6Halide4Func8store_atENS_9LoopLevelE` |
 | `Func::compute_at(Func const &, Var const &)` | `_ZN6Halide4Func10compute_atERKS0_RKNS_3VarE` |
 | `Func::store_at(Func const &, Var const &)` | `_ZN6Halide4Func8store_atERKS0_RKNS_3VarE` |
-| `Func::compute_at(Func const &, RVar const &)` — no pair | `_ZN6Halide4Func10compute_atERKS0_RKNS_4RVarE` |
+| `Func::compute_at(Func const &, RVar const &)` | `_ZN6Halide4Func10compute_atERKS0_RKNS_4RVarE` |
+| `Func::store_at(Func const &, RVar const &)` | `_ZN6Halide4Func8store_atERKS0_RKNS_4RVarE` |
+
+Because the sets are symmetric, matching just the class and method tokens
+(`4Func10compute_at` → `4Func8store_at`) covers all three overloads at once.
+That fragment appears in exactly 3 `libHalide` symbols and in nothing outside
+`Halide::Func` — notably not in the templated
+`Internal::GeneratorOutputBase::compute_at` forwarder, whose mangled name
+carries a different class token.
+
+### Implemented mapping fragments
+
+These are the fragments the operators actually use. Each was checked to match
+exactly its intended overloads in `libHalide.so.16.0.0` and nothing outside
+`Halide::Func`/`Halide::Stage`.
+
+| Operator | match | replace | symbols hit |
+|---|---|---|---|
+| `Halide_vectorize_to_unroll` | `9vectorizeERKNS_9VarOrRVarE` | `6unrollERKNS_9VarOrRVarE` | 4 |
+| `Halide_vectorize_to_parallel` | `9vectorizeERKNS_9VarOrRVarE` | `8parallelERKNS_9VarOrRVarE` | 4 |
+| `Halide_unroll_to_vectorize` | `6unrollERKNS_9VarOrRVarE` | `9vectorizeERKNS_9VarOrRVarE` | 4 |
+| `Halide_unroll_to_parallel` | `6unrollERKNS_9VarOrRVarE` | `8parallelERKNS_9VarOrRVarE` | 4 |
+| `Halide_parallel_to_vectorize` | `8parallelERKNS_9VarOrRVarE` | `9vectorizeERKNS_9VarOrRVarE` | 4 |
+| `Halide_parallel_to_unroll` | `8parallelERKNS_9VarOrRVarE` | `6unrollERKNS_9VarOrRVarE` | 4 |
+| `Halide_compute_at_to_store_at` | `4Func10compute_at` | `4Func8store_at` | 3 |
+| `Halide_store_at_to_compute_at` | `4Func8store_at` | `4Func10compute_at` | 3 |
+
+Matching the method token together with its first parameter is what lets one
+mapping cover a whole overload set: the 3-argument mangled name simply
+continues past the matched prefix with `RKNS_4ExprENS_12TailStrategyE`, which
+the rewrite leaves untouched. The class token stays outside the match, so a
+`Func::` call can never be redirected to a `Stage::` overload.
 
 ### Call-site census (source-level, 15 apps)
 
