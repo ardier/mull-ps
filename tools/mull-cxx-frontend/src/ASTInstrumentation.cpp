@@ -93,6 +93,21 @@ clang::FunctionDecl *ASTInstrumentation::createGetEnvFuncDecl(clang::DeclContext
 
   clang::FunctionProtoType::ExtProtoInfo ext;
 
+  /// This declaration is injected at the very top of the translation unit,
+  /// ahead of every #include, so whatever the C library goes on to declare must
+  /// agree with it or the redeclaration is ill-formed ([except.spec]/4 forbids
+  /// a later declaration adding an exception specification).
+  ///
+  /// In C++ mode the C library declares getenv as noexcept -- glibc via
+  /// __THROW, libc++ and musl likewise -- so declare it that way. Without this,
+  /// any translation unit that (transitively) includes <cstdlib> fails with
+  /// "exception specification in declaration does not match previous
+  /// declaration". That covers most real code: it reproduces on any Halide
+  /// generator, since Halide.h includes <functional> -> <cstdlib>.
+  if (context.getLangOpts().CPlusPlus) {
+    ext.ExceptionSpec.Type = clang::EST_BasicNoexcept;
+  }
+
   clang::QualType parameterType = context.getPointerType(context.getConstType(context.CharTy));
   clang::QualType returnType = context.getPointerType(context.CharTy);
 
