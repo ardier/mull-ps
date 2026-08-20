@@ -110,6 +110,29 @@ public:
   ~HalideCalleeSwapMutation() {}
 };
 
+/// Reorders two arguments of a call expression, keeping the callee: `f(a, b)`
+/// becomes `f(b, a)`.
+///
+/// Used for the Halide API calls whose argument order carries the domain
+/// meaning: select(condition, true_value, false_value) and
+/// clamp(a, min_val, max_val).
+class HalideArgumentSwapMutation : public ASTMutation {
+public:
+  clang::CallExpr *callExpr;
+  unsigned firstArgumentIndex;
+  unsigned secondArgumentIndex;
+
+  HalideArgumentSwapMutation(clang::CallExpr *callExpr, unsigned firstArgumentIndex,
+                             unsigned secondArgumentIndex)
+      : callExpr(callExpr), firstArgumentIndex(firstArgumentIndex),
+        secondArgumentIndex(secondArgumentIndex) {}
+
+  void performMutation(ASTMutationPoint &mutation, ASTMutator &mutator) {
+    mutator.performHalideArgumentSwapMutation(mutation, *this);
+  }
+  ~HalideArgumentSwapMutation() {}
+};
+
 class ReplaceNumericInitAssignmentMutation : public ASTMutation {
 
 public:

@@ -67,6 +67,11 @@ static const std::vector<MutationIdentifier> MUTATIONS_MAP({
     { "Halide_mirror_interior_to_repeat_edge", mull::MutatorKind::Halide_BC_MirrorInteriorToRepeatEdge, false },
     { "Halide_mirror_interior_to_repeat_image", mull::MutatorKind::Halide_BC_MirrorInteriorToRepeatImage, false },
     { "Halide_mirror_interior_to_mirror_image", mull::MutatorKind::Halide_BC_MirrorInteriorToMirrorImage, false },
+
+    /// Halide special-function-call argument swaps. Opt-in only (group
+    /// halide_special_calls), hence enabledByDefault = false.
+    { "Halide_select_swap_branches", mull::MutatorKind::Halide_SelectSwapBranches, false },
+    { "Halide_clamp_swap_bounds", mull::MutatorKind::Halide_ClampSwapBounds, false },
 });
 
 MutationMap::MutationMap() : usedMutatorSet(), mapKindsToIdentifiers(), mapIdentifiersToKinds() {
@@ -104,6 +109,9 @@ static const std::vector<std::pair<std::string, std::vector<std::string>>> MUTAT
         "Halide_mirror_interior_to_repeat_edge",
         "Halide_mirror_interior_to_repeat_image",
         "Halide_mirror_interior_to_mirror_image" } },
+    { "halide_special_calls", { "Halide_select_swap_branches", "Halide_clamp_swap_bounds" } },
+    /// Group members may themselves be group names: addMutation recurses.
+    { "halide_ast", { "halide_boundary_conditions", "halide_special_calls" } },
 });
 
 void MutationMap::addMutation(std::string identifier) {

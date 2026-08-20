@@ -227,6 +227,49 @@ void MullASTMutator::performHalideCalleeSwapMutation(
                                             mutation.beginColumn);
 }
 
+clang::Expr *MullASTMutator::buildArgumentSwappedCall(clang::CallExpr *callExpr,
+                                                      unsigned firstArgumentIndex,
+                                                      unsigned secondArgumentIndex) {
+  assert(firstArgumentIndex < callExpr->getNumArgs());
+  assert(secondArgumentIndex < callExpr->getNumArgs());
+
+  llvm::SmallVector<clang::Expr *, 4> arguments(callExpr->arguments().begin(),
+                                                callExpr->arguments().end());
+  std::swap(arguments[firstArgumentIndex], arguments[secondArgumentIndex]);
+
+  /// The callee expression is reused unchanged, so the swap can never resolve
+  /// to a different function than the one that was written.
+  clang::ExprResult newCall = sema.BuildCallExpr(/*Scope=*/nullptr,
+                                                 callExpr->getCallee(),
+                                                 callExpr->getBeginLoc(),
+                                                 arguments,
+                                                 callExpr->getRParenLoc());
+  if (newCall.isInvalid()) {
+    return nullptr;
+  }
+  return newCall.get();
+}
+
+void MullASTMutator::performHalideArgumentSwapMutation(
+    ASTMutationPoint &mutation, HalideArgumentSwapMutation &halideArgumentSwapMutator) {
+  clang::CallExpr *oldCall = halideArgumentSwapMutator.callExpr;
+  clang::Expr *newCall = buildArgumentSwappedCall(oldCall,
+                                                  halideArgumentSwapMutator.firstArgumentIndex,
+                                                  halideArgumentSwapMutator.secondArgumentIndex);
+  if (newCall == nullptr) {
+    llvm::errs() << "mull-cxx-frontend: could not rebuild the call with swapped arguments, "
+                    "skipping mutation: "
+                 << mutation.mutationIdentifier << "\n";
+    return;
+  }
+
+  clangAstMutator.replaceExpression(oldCall, newCall, mutation.mutationIdentifier);
+  instrumentation.addMutantStringDefinition(mutation.mutationBinaryRecord,
+                                            static_cast<int>(mutation.mutationType),
+                                            mutation.beginLine,
+                                            mutation.beginColumn);
+}
+
 [[noreturn]] void MullASTMutator::notImplemented() noexcept {
     std::cerr << "Not implemented\n";
     std::abort();

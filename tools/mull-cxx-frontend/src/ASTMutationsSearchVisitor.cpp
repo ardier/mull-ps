@@ -169,8 +169,105 @@ bool ASTMutationsSearchVisitor::VisitCallExpr(clang::CallExpr *callExpr) {
   }
 
   visitHalideBoundaryConditionsCall(callExpr);
+  visitHalideSpecialCall(callExpr);
 
   return true;
+}
+
+/// True when `declContext` is the top-level namespace Halide. Checking the
+/// namespace chain rather than a printed qualified name keeps a same-named
+/// user namespace out.
+static bool isHalideNamespace(const clang::DeclContext *declContext) {
+  const auto *halide = clang::dyn_cast_or_null<clang::NamespaceDecl>(declContext);
+  if (halide == nullptr || halide->getName() != "Halide") {
+    return false;
+  }
+  return halide->getParent() != nullptr && halide->getParent()->isTranslationUnit();
+}
+
+/// True when `declContext` is exactly the namespace Halide::BoundaryConditions,
+/// which keeps Halide::BoundaryConditions::Internal out.
+static bool isHalideBoundaryConditionsNamespace(const clang::DeclContext *declContext) {
+  const auto *boundaryConditions = clang::dyn_cast_or_null<clang::NamespaceDecl>(declContext);
+  if (boundaryConditions == nullptr || boundaryConditions->getName() != "BoundaryConditions") {
+    return false;
+  }
+  return isHalideNamespace(boundaryConditions->getParent());
+}
+
+/// True when `declContext` is namespace Halide or anything nested in it.
+static bool isInsideHalideNamespace(const clang::DeclContext *declContext) {
+  for (; declContext != nullptr; declContext = declContext->getParent()) {
+    if (isHalideNamespace(declContext)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/// True when the body currently being searched belongs to Halide itself.
+///
+/// Halide's public API is largely inline and templated, so its own internal
+/// calls end up in the same translation unit as the code under test. Mutating
+/// one of them rewrites a header body shared by every call site instead of the
+/// call site itself, which is what makes an IR-level rewrite of these APIs
+/// produce non-local mutants. Restricting to call sites outside namespace
+/// Halide is what keeps every mutation point in the source that actually chose
+/// the Halide construct.
+bool ASTMutationsSearchVisitor::isInsideHalideItself() const {
+  return enclosingFunction != nullptr &&
+         isInsideHalideNamespace(enclosingFunction->getDeclContext());
+}
+
+/// Halide API calls whose argument order carries the domain meaning, with the
+/// pair of argument positions the mutation exchanges.
+static const struct {
+  const char *function;
+  unsigned arity;
+  unsigned firstArgumentIndex;
+  unsigned secondArgumentIndex;
+  mull::MutatorKind mutatorKind;
+} HalideArgumentSwaps[] = {
+  /// select(condition, true_value, false_value) -> select(condition,
+  /// false_value, true_value). Both values are evaluated either way, so this
+  /// inverts the choice rather than changing what is computed.
+  { "select", 3, 1, 2, mull::MutatorKind::Halide_SelectSwapBranches },
+  /// clamp(a, min_val, max_val) -> clamp(a, max_val, min_val). clamp expands
+  /// to max(min(a, max_val), min_val), so the swap collapses the clamp onto a
+  /// single bound.
+  { "clamp", 3, 1, 2, mull::MutatorKind::Halide_ClampSwapBounds },
+};
+
+void ASTMutationsSearchVisitor::visitHalideSpecialCall(clang::CallExpr *callExpr) {
+  const clang::FunctionDecl *callee = callExpr->getDirectCallee();
+  if (callee == nullptr) {
+    return;
+  }
+  /// Both functions live directly in namespace Halide; this also keeps the
+  /// same-named Halide::Internal helpers out.
+  if (!isHalideNamespace(callee->getDeclContext())) {
+    return;
+  }
+  if (isInsideHalideItself()) {
+    return;
+  }
+
+  const std::string calleeName = callee->getDeclName().getAsString();
+  for (const auto &swap : HalideArgumentSwaps) {
+    if (calleeName != swap.function || callExpr->getNumArgs() != swap.arity) {
+      continue;
+    }
+    if (!mutationMap.isValidMutation(swap.mutatorKind)) {
+      continue;
+    }
+    std::unique_ptr<HalideArgumentSwapMutation> mutator = std::make_unique<
+        HalideArgumentSwapMutation>(callExpr, swap.firstArgumentIndex, swap.secondArgumentIndex);
+    recordMutationPoint(swap.mutatorKind,
+                        std::move(mutator),
+                        callExpr,
+                        ClangCompatibilityStmtGetBeginLoc(*callExpr),
+                        true);
+  }
 }
 
 /// The Halide::BoundaryConditions members that share an overload set and can
@@ -195,22 +292,6 @@ static const struct {
   { "mirror_interior", "mirror_image", mull::MutatorKind::Halide_BC_MirrorInteriorToMirrorImage },
 };
 
-/// True when `declContext` is exactly the namespace Halide::BoundaryConditions.
-/// Checking the namespace chain rather than a printed qualified name keeps
-/// Halide::BoundaryConditions::Internal and any same-named user namespace out.
-static bool isHalideBoundaryConditionsNamespace(const clang::DeclContext *declContext) {
-  const auto *boundaryConditions = clang::dyn_cast_or_null<clang::NamespaceDecl>(declContext);
-  if (boundaryConditions == nullptr || boundaryConditions->getName() != "BoundaryConditions") {
-    return false;
-  }
-  const auto *halide =
-      clang::dyn_cast_or_null<clang::NamespaceDecl>(boundaryConditions->getParent());
-  if (halide == nullptr || halide->getName() != "Halide") {
-    return false;
-  }
-  return halide->getParent() != nullptr && halide->getParent()->isTranslationUnit();
-}
-
 void ASTMutationsSearchVisitor::visitHalideBoundaryConditionsCall(clang::CallExpr *callExpr) {
   /// Only fully resolved calls are mutated. Inside the uninstantiated bodies of
   /// Halide's own repeat_edge<T>/... templates the inner call is type-dependent
@@ -225,14 +306,10 @@ void ASTMutationsSearchVisitor::visitHalideBoundaryConditionsCall(clang::CallExp
     return;
   }
   /// Halide's Func-like overloads are thin templates forwarding to the
-  /// Func-taking overload of the same boundary condition. Those forwarding
+  /// Func-taking overload of the same boundary condition; those forwarding
   /// calls are Halide's own implementation, not a boundary condition chosen by
-  /// the code under test: mutating one rewrites a header body shared by every
-  /// call site instead of the call site itself. Only calls made from outside
-  /// the namespace are mutated, which is what keeps every mutation point in
-  /// the source that actually picked a boundary condition.
-  if (enclosingFunction != nullptr &&
-      isHalideBoundaryConditionsNamespace(enclosingFunction->getDeclContext())) {
+  /// the code under test.
+  if (isInsideHalideItself()) {
     return;
   }
 

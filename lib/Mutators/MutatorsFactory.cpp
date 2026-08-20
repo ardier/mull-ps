@@ -15,6 +15,7 @@
 #include <llvm/ADT/STLExtras.h>
 #include <mull/Mutators/CXX/HalideBoundaryConditionsMutators.h>
 #include <mull/Mutators/CXX/HalideMutators.h>
+#include <mull/Mutators/CXX/HalideSpecialCallMutators.h>
 #include <sstream>
 #include <unordered_set>
 
@@ -79,6 +80,16 @@ static string Halide_BoundaryConditions() {
   return "halide_boundary_conditions";
 }
 
+/// Halide API calls whose argument order carries domain semantics.
+static string Halide_Special_Calls() {
+  return "halide_special_calls";
+}
+
+/// Every novel Halide operator that runs on the Clang AST route.
+static string Halide_AST() {
+  return "halide_ast";
+}
+
 static void expandGroups(Diagnostics &diagnostics, const vector<string> &groups,
                          const map<string, vector<string>> &mapping,
                          unordered_set<string> &expandedGroups) {
@@ -123,6 +134,16 @@ MutatorsFactory::MutatorsFactory(Diagnostics &diagnostics) : diagnostics(diagnos
     cxx::HalideMirrorInteriorToRepeatEdge::ID(),
     cxx::HalideMirrorInteriorToRepeatImage::ID(),
     cxx::HalideMirrorInteriorToMirrorImage::ID(),
+  };
+
+  groupsMapping[Halide_Special_Calls()] = {
+    cxx::HalideSelectSwapBranches::ID(),
+    cxx::HalideClampSwapBounds::ID(),
+  };
+
+  groupsMapping[Halide_AST()] = {
+    Halide_BoundaryConditions(),
+    Halide_Special_Calls(),
   };
 
   groupsMapping[CXX_Calls()] = { cxx::RemoveVoidCall::ID(), cxx::ReplaceScalarCall::ID() };
@@ -304,6 +325,10 @@ void MutatorsFactory::init() {
   addMutator<cxx::HalideMirrorInteriorToRepeatEdge>(mutatorsMapping);
   addMutator<cxx::HalideMirrorInteriorToRepeatImage>(mutatorsMapping);
   addMutator<cxx::HalideMirrorInteriorToMirrorImage>(mutatorsMapping);
+
+  /// Halide special-function-call argument swaps (AST route only).
+  addMutator<cxx::HalideSelectSwapBranches>(mutatorsMapping);
+  addMutator<cxx::HalideClampSwapBounds>(mutatorsMapping);
 }
 
 Mutator *MutatorsFactory::getMutator(const string &mutatorId) {
