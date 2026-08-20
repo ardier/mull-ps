@@ -5,7 +5,7 @@
 [submodule "vendor/libirm"]
 	path = vendor/libirm
 	url = ../libirm-halide
-	branch = fse2027
+	branch = wip
 [submodule "vendor/spdlog"]
 	path = vendor/spdlog
 	url = https://github.com/gabime/spdlog.git

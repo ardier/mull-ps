@@ -10,9 +10,9 @@ requires LLVM ≥ 16 and will not build here.
 
 | Repo | Branch | Role |
 |---|---|---|
-| `mull-ps` | `fse2027` (off `origin/halide`) | Mull fork; mutation frontends and runner |
-| `libirm-halide` | `fse2027` (off `origin/halide-mutants`) | IR mutation primitives, incl. `HalideReplacement` |
-| `Halide-mutation` | `fse2027` (off `origin/release/16.x`) | Halide + the benchmark apps |
+| `mull-ps` | `wip` (off `origin/halide`) | Mull fork; mutation frontends and runner |
+| `libirm-halide` | `wip` (off `origin/halide-mutants`) | IR mutation primitives, incl. `HalideReplacement` |
+| `Halide-mutation` | `wip` (off `origin/release/16.x`) | Halide + the benchmark apps |
 
 ## Prerequisites
 
@@ -22,7 +22,7 @@ sudo apt install llvm-14-dev libclang-14-dev clang-14 cmake ninja-build
 
 ## 1. Build Mull
 
-`vendor/libirm` tracks `../libirm-halide` at `fse2027`. The relative URL
+`vendor/libirm` tracks `../libirm-halide` at `wip`. The relative URL
 resolves against the superproject's remote, so point it at a local clone with:
 
 ```sh
