@@ -119,6 +119,22 @@ static const clang::Stmt *findMutantExpression(MutationPoint *point,
     return visitor.foundMutant();
   }
 
+  /// Schedule directives are member calls on Func/Stage; the same visitor that
+  /// locates the arithmetic operator calls resolves them.
+  case MutatorKind::Halide_ReplaceVectorizeToUnrollCall:
+  case MutatorKind::Halide_ReplaceVectorizeToParallelCall:
+  case MutatorKind::Halide_ReplaceUnrollToVectorizeCall:
+  case MutatorKind::Halide_ReplaceUnrollToParallelCall:
+  case MutatorKind::Halide_ReplaceParallelToVectorizeCall:
+  case MutatorKind::Halide_ReplaceParallelToUnrollCall:
+  case MutatorKind::Halide_ReplaceComputeAtToStoreAtCall:
+  case MutatorKind::Halide_ReplaceStoreAtToComputeAtCall:
+  {
+    ReplaceHalideCallVisitor visitor(visitorParameters);
+    visitor.TraverseDecl(decl);
+    return visitor.foundMutant();
+  }
+
   case MutatorKind::CXX_RemoveVoidCall: {
     RemoveVoidFunctionVisitor visitor(visitorParameters);
     visitor.TraverseDecl(decl);

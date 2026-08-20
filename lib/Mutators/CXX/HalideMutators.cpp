@@ -214,3 +214,123 @@ ReplaceHalideDivToMulCall::ReplaceHalideDivToMulCall()
                         MutatorKind::Halide_ReplaceHalideDivToMulCall,
                         ReplaceHalideDivToMulCall::ID(), "Replaces call to a halide div to mul",
                         "*", "Replaced call to a halide div with mul") {}
+
+static std::vector<std::unique_ptr<irm::IRMutation>> getReplaceHalideVectorizeToUnrollCall() {
+  std::vector<std::unique_ptr<irm::IRMutation>> mutators;
+  mutators.push_back(std::make_unique<irm::Halide_vectorize_to_unroll>());
+  return mutators;
+}
+
+std::string ReplaceHalideVectorizeToUnrollCall::ID() {
+  return "Halide_vectorize_to_unroll";
+}
+
+ReplaceHalideVectorizeToUnrollCall::ReplaceHalideVectorizeToUnrollCall()
+    : TrivialCXXMutator(getReplaceHalideVectorizeToUnrollCall(), MutatorKind::Halide_ReplaceVectorizeToUnrollCall, ReplaceHalideVectorizeToUnrollCall::ID(),
+                        "Replaces a halide vectorize with unroll", "*",
+                        "Replaced a halide vectorize with unroll") {}
+
+static std::vector<std::unique_ptr<irm::IRMutation>> getReplaceHalideVectorizeToParallelCall() {
+  std::vector<std::unique_ptr<irm::IRMutation>> mutators;
+  mutators.push_back(std::make_unique<irm::Halide_vectorize_to_parallel>());
+  return mutators;
+}
+
+std::string ReplaceHalideVectorizeToParallelCall::ID() {
+  return "Halide_vectorize_to_parallel";
+}
+
+ReplaceHalideVectorizeToParallelCall::ReplaceHalideVectorizeToParallelCall()
+    : TrivialCXXMutator(getReplaceHalideVectorizeToParallelCall(), MutatorKind::Halide_ReplaceVectorizeToParallelCall, ReplaceHalideVectorizeToParallelCall::ID(),
+                        "Replaces a halide vectorize with parallel", "*",
+                        "Replaced a halide vectorize with parallel") {}
+
+static std::vector<std::unique_ptr<irm::IRMutation>> getReplaceHalideUnrollToVectorizeCall() {
+  std::vector<std::unique_ptr<irm::IRMutation>> mutators;
+  mutators.push_back(std::make_unique<irm::Halide_unroll_to_vectorize>());
+  return mutators;
+}
+
+std::string ReplaceHalideUnrollToVectorizeCall::ID() {
+  return "Halide_unroll_to_vectorize";
+}
+
+ReplaceHalideUnrollToVectorizeCall::ReplaceHalideUnrollToVectorizeCall()
+    : TrivialCXXMutator(getReplaceHalideUnrollToVectorizeCall(), MutatorKind::Halide_ReplaceUnrollToVectorizeCall, ReplaceHalideUnrollToVectorizeCall::ID(),
+                        "Replaces a halide unroll with vectorize", "*",
+                        "Replaced a halide unroll with vectorize") {}
+
+static std::vector<std::unique_ptr<irm::IRMutation>> getReplaceHalideUnrollToParallelCall() {
+  std::vector<std::unique_ptr<irm::IRMutation>> mutators;
+  mutators.push_back(std::make_unique<irm::Halide_unroll_to_parallel>());
+  return mutators;
+}
+
+std::string ReplaceHalideUnrollToParallelCall::ID() {
+  return "Halide_unroll_to_parallel";
+}
+
+ReplaceHalideUnrollToParallelCall::ReplaceHalideUnrollToParallelCall()
+    : TrivialCXXMutator(getReplaceHalideUnrollToParallelCall(), MutatorKind::Halide_ReplaceUnrollToParallelCall, ReplaceHalideUnrollToParallelCall::ID(),
+                        "Replaces a halide unroll with parallel", "*",
+                        "Replaced a halide unroll with parallel") {}
+
+static std::vector<std::unique_ptr<irm::IRMutation>> getReplaceHalideParallelToVectorizeCall() {
+  std::vector<std::unique_ptr<irm::IRMutation>> mutators;
+  mutators.push_back(std::make_unique<irm::Halide_parallel_to_vectorize>());
+  return mutators;
+}
+
+std::string ReplaceHalideParallelToVectorizeCall::ID() {
+  return "Halide_parallel_to_vectorize";
+}
+
+ReplaceHalideParallelToVectorizeCall::ReplaceHalideParallelToVectorizeCall()
+    : TrivialCXXMutator(getReplaceHalideParallelToVectorizeCall(), MutatorKind::Halide_ReplaceParallelToVectorizeCall, ReplaceHalideParallelToVectorizeCall::ID(),
+                        "Replaces a halide parallel with vectorize", "*",
+                        "Replaced a halide parallel with vectorize") {}
+
+static std::vector<std::unique_ptr<irm::IRMutation>> getReplaceHalideParallelToUnrollCall() {
+  std::vector<std::unique_ptr<irm::IRMutation>> mutators;
+  mutators.push_back(std::make_unique<irm::Halide_parallel_to_unroll>());
+  return mutators;
+}
+
+std::string ReplaceHalideParallelToUnrollCall::ID() {
+  return "Halide_parallel_to_unroll";
+}
+
+ReplaceHalideParallelToUnrollCall::ReplaceHalideParallelToUnrollCall()
+    : TrivialCXXMutator(getReplaceHalideParallelToUnrollCall(), MutatorKind::Halide_ReplaceParallelToUnrollCall, ReplaceHalideParallelToUnrollCall::ID(),
+                        "Replaces a halide parallel with unroll", "*",
+                        "Replaced a halide parallel with unroll") {}
+
+static std::vector<std::unique_ptr<irm::IRMutation>> getReplaceHalideComputeAtToStoreAtCall() {
+  std::vector<std::unique_ptr<irm::IRMutation>> mutators;
+  mutators.push_back(std::make_unique<irm::Halide_compute_at_to_store_at>());
+  return mutators;
+}
+
+std::string ReplaceHalideComputeAtToStoreAtCall::ID() {
+  return "Halide_compute_at_to_store_at";
+}
+
+ReplaceHalideComputeAtToStoreAtCall::ReplaceHalideComputeAtToStoreAtCall()
+    : TrivialCXXMutator(getReplaceHalideComputeAtToStoreAtCall(), MutatorKind::Halide_ReplaceComputeAtToStoreAtCall, ReplaceHalideComputeAtToStoreAtCall::ID(),
+                        "Replaces a halide compute_at with store_at", "*",
+                        "Replaced a halide compute_at with store_at") {}
+
+static std::vector<std::unique_ptr<irm::IRMutation>> getReplaceHalideStoreAtToComputeAtCall() {
+  std::vector<std::unique_ptr<irm::IRMutation>> mutators;
+  mutators.push_back(std::make_unique<irm::Halide_store_at_to_compute_at>());
+  return mutators;
+}
+
+std::string ReplaceHalideStoreAtToComputeAtCall::ID() {
+  return "Halide_store_at_to_compute_at";
+}
+
+ReplaceHalideStoreAtToComputeAtCall::ReplaceHalideStoreAtToComputeAtCall()
+    : TrivialCXXMutator(getReplaceHalideStoreAtToComputeAtCall(), MutatorKind::Halide_ReplaceStoreAtToComputeAtCall, ReplaceHalideStoreAtToComputeAtCall::ID(),
+                        "Replaces a halide store_at with compute_at", "*",
+                        "Replaced a halide store_at with compute_at") {}

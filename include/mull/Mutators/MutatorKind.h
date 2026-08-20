@@ -86,7 +86,17 @@ enum class MutatorKind {
 
   Halide_ReplaceHalideDivToMulCall,
   Halide_ReplaceHalideDivToSubCall,
-  Halide_ReplaceHalideDivToAddCall
+  Halide_ReplaceHalideDivToAddCall,
+
+  // Schedule directives -- no C++/GPL sibling operator exists for these.
+  Halide_ReplaceVectorizeToUnrollCall,
+  Halide_ReplaceVectorizeToParallelCall,
+  Halide_ReplaceUnrollToVectorizeCall,
+  Halide_ReplaceUnrollToParallelCall,
+  Halide_ReplaceParallelToVectorizeCall,
+  Halide_ReplaceParallelToUnrollCall,
+  Halide_ReplaceComputeAtToStoreAtCall,
+  Halide_ReplaceStoreAtToComputeAtCall
 
 };
 

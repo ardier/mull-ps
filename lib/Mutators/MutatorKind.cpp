@@ -180,6 +180,30 @@ std::string MutationKindToString(MutatorKind mutatorKind) {
   case MutatorKind::Halide_ReplaceHalideDivToMulCall: {
     return "Halide: Div to Mul";
   }
+  case MutatorKind::Halide_ReplaceVectorizeToUnrollCall: {
+    return "Halide: Vectorize to Unroll";
+  }
+  case MutatorKind::Halide_ReplaceVectorizeToParallelCall: {
+    return "Halide: Vectorize to Parallel";
+  }
+  case MutatorKind::Halide_ReplaceUnrollToVectorizeCall: {
+    return "Halide: Unroll to Vectorize";
+  }
+  case MutatorKind::Halide_ReplaceUnrollToParallelCall: {
+    return "Halide: Unroll to Parallel";
+  }
+  case MutatorKind::Halide_ReplaceParallelToVectorizeCall: {
+    return "Halide: Parallel to Vectorize";
+  }
+  case MutatorKind::Halide_ReplaceParallelToUnrollCall: {
+    return "Halide: Parallel to Unroll";
+  }
+  case MutatorKind::Halide_ReplaceComputeAtToStoreAtCall: {
+    return "Halide: ComputeAt to StoreAt";
+  }
+  case MutatorKind::Halide_ReplaceStoreAtToComputeAtCall: {
+    return "Halide: StoreAt to ComputeAt";
+  }
   }
 }
 

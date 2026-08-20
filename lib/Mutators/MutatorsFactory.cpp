@@ -98,8 +98,17 @@ MutatorsFactory::MutatorsFactory(Diagnostics &diagnostics) : diagnostics(diagnos
     cxx::ReplaceHalideSubToAddCall::ID(), cxx::ReplaceHalideSubToDivCall::ID(),
     cxx::ReplaceHalideMulToAddCall::ID(), cxx::ReplaceHalideMulToSubCall::ID(),
     cxx::ReplaceHalideMulToDivCall::ID(), cxx::ReplaceHalideDivToMulCall::ID(),
-    cxx::ReplaceHalideDivToSubCall::ID(), cxx::ReplaceHalideDivToAddCall::ID()
+    cxx::ReplaceHalideDivToSubCall::ID(), cxx::ReplaceHalideDivToAddCall::ID(),
 
+    // Schedule directives
+    cxx::ReplaceHalideVectorizeToUnrollCall::ID(),
+    cxx::ReplaceHalideVectorizeToParallelCall::ID(),
+    cxx::ReplaceHalideUnrollToVectorizeCall::ID(),
+    cxx::ReplaceHalideUnrollToParallelCall::ID(),
+    cxx::ReplaceHalideParallelToVectorizeCall::ID(),
+    cxx::ReplaceHalideParallelToUnrollCall::ID(),
+    cxx::ReplaceHalideComputeAtToStoreAtCall::ID(),
+    cxx::ReplaceHalideStoreAtToComputeAtCall::ID()
   };
 
   groupsMapping[CXX_Calls()] = { cxx::RemoveVoidCall::ID(), cxx::ReplaceScalarCall::ID() };
@@ -181,13 +190,20 @@ MutatorsFactory::MutatorsFactory(Diagnostics &diagnostics) : diagnostics(diagnos
     CXX_Const_Assignment(),
   };
 
+  /// The halide_mutator group is deliberately NOT folded into cxx_all or
+  /// cxx_default. Those two groups are the C++ baseline arm of the experiments:
+  /// including the Halide operators there would mean the "stock C++ mutation"
+  /// measurement silently contained DSL-aware mutants, and the two arms could
+  /// not be compared. Request Halide operators explicitly with
+  /// `-mutators=halide_mutator`, or together via `-mutators=cxx_all
+  /// -mutators=halide_mutator`.
   groupsMapping[CXX_All()] = { CXX_Assignment(), CXX_Increment(),  CXX_Decrement(),
                                CXX_Arithmetic(), CXX_Comparison(), CXX_Boundary(),
-                               CXX_Bitwise(),    CXX_Calls(),      Halide_Mutator() };
+                               CXX_Bitwise(),    CXX_Calls() };
 
   groupsMapping[CXX_Default()] = {
     CXX_Increment(), CXX_Arithmetic(), CXX_Comparison(),
-    CXX_Boundary(),  CXX_Calls(),      Halide_Mutator(),
+    CXX_Boundary(),  CXX_Calls(),
   };
 
   groupsMapping[Experimental()] = { NegateConditionMutator::ID(),
@@ -267,6 +283,14 @@ void MutatorsFactory::init() {
   addMutator<cxx::ReplaceHalideDivToAddCall>(mutatorsMapping);
   addMutator<cxx::ReplaceHalideDivToSubCall>(mutatorsMapping);
   addMutator<cxx::ReplaceHalideDivToMulCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideVectorizeToUnrollCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideVectorizeToParallelCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideUnrollToVectorizeCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideUnrollToParallelCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideParallelToVectorizeCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideParallelToUnrollCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideComputeAtToStoreAtCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideStoreAtToComputeAtCall>(mutatorsMapping);
 }
 
 Mutator *MutatorsFactory::getMutator(const string &mutatorId) {

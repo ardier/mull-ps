@@ -82,5 +82,56 @@ public:
   ReplaceHalideDivToAddCall();
 };
 
+// Schedule-directive swaps. Unlike the arithmetic operators above these have no
+// C++ or GPL sibling: reordering vectorize/unroll/parallel, or moving a Func's
+// compute level away from its storage level, is only expressible in the DSL.
+class ReplaceHalideVectorizeToUnrollCall : public TrivialCXXMutator {
+public:
+  static std::string ID();
+  ReplaceHalideVectorizeToUnrollCall();
+};
+
+class ReplaceHalideVectorizeToParallelCall : public TrivialCXXMutator {
+public:
+  static std::string ID();
+  ReplaceHalideVectorizeToParallelCall();
+};
+
+class ReplaceHalideUnrollToVectorizeCall : public TrivialCXXMutator {
+public:
+  static std::string ID();
+  ReplaceHalideUnrollToVectorizeCall();
+};
+
+class ReplaceHalideUnrollToParallelCall : public TrivialCXXMutator {
+public:
+  static std::string ID();
+  ReplaceHalideUnrollToParallelCall();
+};
+
+class ReplaceHalideParallelToVectorizeCall : public TrivialCXXMutator {
+public:
+  static std::string ID();
+  ReplaceHalideParallelToVectorizeCall();
+};
+
+class ReplaceHalideParallelToUnrollCall : public TrivialCXXMutator {
+public:
+  static std::string ID();
+  ReplaceHalideParallelToUnrollCall();
+};
+
+class ReplaceHalideComputeAtToStoreAtCall : public TrivialCXXMutator {
+public:
+  static std::string ID();
+  ReplaceHalideComputeAtToStoreAtCall();
+};
+
+class ReplaceHalideStoreAtToComputeAtCall : public TrivialCXXMutator {
+public:
+  static std::string ID();
+  ReplaceHalideStoreAtToComputeAtCall();
+};
+
 } // namespace cxx
 } // namespace mull
