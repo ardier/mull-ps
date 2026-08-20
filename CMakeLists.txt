@@ -97,4 +97,34 @@ add_subdirectory(vendor/libirm EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/spdlog EXCLUDE_FROM_ALL)
 set(REPROC++ ON)
 add_subdirectory(vendor/reproc EXCLUDE_FROM_ALL)
+
+# Vendored third-party headers are not ours to keep warning-clean, and GCC 13
+# turned some of their long-standing non-conformances into hard errors:
+# reproc++'s `options::env`/`options::redirect` members shadow the enclosing
+# `reproc::env`/`reproc::redirect` types, which is a [basic.scope.class]
+# violation that GCC accepted silently until 13 made -Wchanges-meaning a
+# permerror.
+#
+# Two separate fixes are needed, neither of which relaxes any warning on Mull's
+# own code:
+#   1. consumers of reproc get its headers via -isystem, and
+#   2. reproc's own targets, which compile those headers through their private
+#      build interface where -isystem does not apply, get -Wno-changes-meaning.
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag(-Wno-changes-meaning MULL_HAVE_WNO_CHANGES_MEANING)
+
+foreach(third_party_target reproc++ reproc)
+  if(TARGET ${third_party_target})
+    get_target_property(third_party_includes
+      ${third_party_target} INTERFACE_INCLUDE_DIRECTORIES)
+    if(third_party_includes)
+      set_target_properties(${third_party_target} PROPERTIES
+        INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${third_party_includes}")
+    endif()
+    if(MULL_HAVE_WNO_CHANGES_MEANING)
+      target_compile_options(${third_party_target} PRIVATE -Wno-changes-meaning)
+    endif()
+  endif()
+endforeach()
+
 add_subdirectory(docs)
