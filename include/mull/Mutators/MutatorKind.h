@@ -115,6 +115,7 @@ enum class MutatorKind {
   /// Halide special-function-call argument swaps (AST route).
   Halide_SelectSwapBranches,
   Halide_ClampSwapBounds,
+  Halide_SelectToIfThenElse,
 
   /// Generated IR-route swaps: relational, logical, bitwise, remainder,
   /// compound-assignment, unary and min/max. See HalideGeneratedMutators.def.

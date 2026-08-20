@@ -152,6 +152,7 @@ MutatorsFactory::MutatorsFactory(Diagnostics &diagnostics) : diagnostics(diagnos
   groupsMapping[Halide_Special_Calls()] = {
     cxx::HalideSelectSwapBranches::ID(),
     cxx::HalideClampSwapBounds::ID(),
+    cxx::HalideSelectToIfThenElse::ID(),
   };
 
   groupsMapping[Halide_AST()] = {
@@ -361,6 +362,7 @@ void MutatorsFactory::init() {
   /// Halide special-function-call argument swaps (AST route only).
   addMutator<cxx::HalideSelectSwapBranches>(mutatorsMapping);
   addMutator<cxx::HalideClampSwapBounds>(mutatorsMapping);
+  addMutator<cxx::HalideSelectToIfThenElse>(mutatorsMapping);
 }
 
 Mutator *MutatorsFactory::getMutator(const string &mutatorId) {

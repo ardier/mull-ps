@@ -72,6 +72,7 @@ static const std::vector<MutationIdentifier> MUTATIONS_MAP({
     /// halide_special_calls), hence enabledByDefault = false.
     { "Halide_select_swap_branches", mull::MutatorKind::Halide_SelectSwapBranches, false },
     { "Halide_clamp_swap_bounds", mull::MutatorKind::Halide_ClampSwapBounds, false },
+    { "Halide_select_to_if_then_else", mull::MutatorKind::Halide_SelectToIfThenElse, false },
 });
 
 MutationMap::MutationMap() : usedMutatorSet(), mapKindsToIdentifiers(), mapIdentifiersToKinds() {
@@ -109,7 +110,10 @@ static const std::vector<std::pair<std::string, std::vector<std::string>>> MUTAT
         "Halide_mirror_interior_to_repeat_edge",
         "Halide_mirror_interior_to_repeat_image",
         "Halide_mirror_interior_to_mirror_image" } },
-    { "halide_special_calls", { "Halide_select_swap_branches", "Halide_clamp_swap_bounds" } },
+    { "halide_special_calls",
+      { "Halide_select_swap_branches",
+        "Halide_clamp_swap_bounds",
+        "Halide_select_to_if_then_else" } },
     /// Group members may themselves be group names: addMutation recurses.
     { "halide_ast", { "halide_boundary_conditions", "halide_special_calls" } },
 });

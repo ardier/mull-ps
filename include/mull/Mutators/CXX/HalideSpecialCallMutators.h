@@ -36,5 +36,20 @@ public:
   HalideClampSwapBounds();
 };
 
+/// Halide::select(c, a, b) evaluates both values and picks one; the
+/// Halide::Internal::Call intrinsic if_then_else evaluates only the branch it
+/// takes. Rewriting one into the other moves the expression along the
+/// eager/lazy axis, which has no analogue in C++ mutation: the host language's
+/// ?: is already lazy, and there is no operator to swap it with.
+///
+/// One-directional. There is no public Halide::if_then_else free function --
+/// the intrinsic is reachable only as Internal::Call::if_then_else -- so no
+/// user code contains a call to mutate in the other direction.
+class HalideSelectToIfThenElse : public TrivialCXXMutator {
+public:
+  static std::string ID();
+  HalideSelectToIfThenElse();
+};
+
 } // namespace cxx
 } // namespace mull

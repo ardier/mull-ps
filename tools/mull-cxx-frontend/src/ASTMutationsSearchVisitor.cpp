@@ -253,6 +253,21 @@ void ASTMutationsSearchVisitor::visitHalideSpecialCall(clang::CallExpr *callExpr
   }
 
   const std::string calleeName = callee->getDeclName().getAsString();
+
+  /// select(condition, true_value, false_value) -> the lazy if_then_else
+  /// intrinsic. One-directional: there is no public Halide::if_then_else, so
+  /// nothing in user code can be mutated back the other way.
+  if (calleeName == "select" && callExpr->getNumArgs() == 3 &&
+      mutationMap.isValidMutation(mull::MutatorKind::Halide_SelectToIfThenElse)) {
+    std::unique_ptr<HalideSelectToIfThenElseMutation> mutator =
+        std::make_unique<HalideSelectToIfThenElseMutation>(callExpr);
+    recordMutationPoint(mull::MutatorKind::Halide_SelectToIfThenElse,
+                        std::move(mutator),
+                        callExpr,
+                        ClangCompatibilityStmtGetBeginLoc(*callExpr),
+                        true);
+  }
+
   for (const auto &swap : HalideArgumentSwaps) {
     if (calleeName != swap.function || callExpr->getNumArgs() != swap.arity) {
       continue;

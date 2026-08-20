@@ -32,3 +32,15 @@ HalideClampSwapBounds::HalideClampSwapBounds()
                         "Swaps the two bounds of a Halide::clamp",
                         "clamp(x, hi, lo)",
                         "Swapped the two bounds of a Halide::clamp") {}
+
+std::string HalideSelectToIfThenElse::ID() {
+  return "Halide_select_to_if_then_else";
+}
+
+HalideSelectToIfThenElse::HalideSelectToIfThenElse()
+    : TrivialCXXMutator(noIRMutations(),
+                        MutatorKind::Halide_SelectToIfThenElse,
+                        HalideSelectToIfThenElse::ID(),
+                        "Replaces an eager Halide::select with the lazy if_then_else intrinsic",
+                        "if_then_else(c, a, b)",
+                        "Replaced an eager Halide::select with the lazy if_then_else intrinsic") {}

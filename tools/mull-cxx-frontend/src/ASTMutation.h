@@ -133,6 +133,23 @@ public:
   ~HalideArgumentSwapMutation() {}
 };
 
+/// Rewrites a call to Halide::select into the lazy Halide::Internal::Call
+/// intrinsic if_then_else, which evaluates only the branch it takes.
+///
+/// One-directional by necessity: there is no public Halide::if_then_else free
+/// function, so no user code can contain a call to swap back from.
+class HalideSelectToIfThenElseMutation : public ASTMutation {
+public:
+  clang::CallExpr *callExpr;
+
+  HalideSelectToIfThenElseMutation(clang::CallExpr *callExpr) : callExpr(callExpr) {}
+
+  void performMutation(ASTMutationPoint &mutation, ASTMutator &mutator) {
+    mutator.performHalideSelectToIfThenElseMutation(mutation, *this);
+  }
+  ~HalideSelectToIfThenElseMutation() {}
+};
+
 class ReplaceNumericInitAssignmentMutation : public ASTMutation {
 
 public:
