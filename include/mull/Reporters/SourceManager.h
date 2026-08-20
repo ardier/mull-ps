@@ -2,7 +2,10 @@
 
 #include "mull/SourceLocation.h"
 
+#include <cstdint>
+#include <cstdio>
 #include <map>
+#include <string>
 #include <utility>
 #include <vector>
 
