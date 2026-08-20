@@ -133,5 +133,14 @@ public:
   ReplaceHalideStoreAtToComputeAtCall();
 };
 
+// Generated swap operators -- see HalideGeneratedMutators.def.
+#define HALIDE_GEN_MUTATOR(KindName, ClassName, IdString, IrmClass, Description)                   \
+  class ClassName : public TrivialCXXMutator {                                                     \
+  public:                                                                                          \
+    static std::string ID();                                                                       \
+    ClassName();                                                                                   \
+  };
+#include "mull/Mutators/CXX/HalideGeneratedMutators.def"
+
 } // namespace cxx
 } // namespace mull

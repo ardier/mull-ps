@@ -135,6 +135,15 @@ static const clang::Stmt *findMutantExpression(MutationPoint *point,
     return visitor.foundMutant();
   }
 
+#define HALIDE_GEN_MUTATOR(KindName, ClassName, IdString, IrmClass, Description)                   \
+  case MutatorKind::KindName:
+#include "mull/Mutators/CXX/HalideGeneratedMutators.def"
+  {
+    ReplaceHalideCallVisitor visitor(visitorParameters);
+    visitor.TraverseDecl(decl);
+    return visitor.foundMutant();
+  }
+
   case MutatorKind::CXX_RemoveVoidCall: {
     RemoveVoidFunctionVisitor visitor(visitorParameters);
     visitor.TraverseDecl(decl);

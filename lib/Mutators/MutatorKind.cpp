@@ -240,6 +240,11 @@ std::string MutationKindToString(MutatorKind mutatorKind) {
   case MutatorKind::Halide_BC_MirrorInteriorToMirrorImage: {
     return "Halide: mirror_interior to mirror_image";
   }
+#define HALIDE_GEN_MUTATOR(KindName, ClassName, IdString, IrmClass, Description)                   \
+  case MutatorKind::KindName: {                                                                    \
+    return Description;                                                                            \
+  }
+#include "mull/Mutators/CXX/HalideGeneratedMutators.def"
   case MutatorKind::Halide_SelectSwapBranches: {
     return "Halide: select branches swapped";
   }

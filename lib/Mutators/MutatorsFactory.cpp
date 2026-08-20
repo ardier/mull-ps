@@ -127,7 +127,11 @@ MutatorsFactory::MutatorsFactory(Diagnostics &diagnostics) : diagnostics(diagnos
     cxx::ReplaceHalideParallelToVectorizeCall::ID(),
     cxx::ReplaceHalideParallelToUnrollCall::ID(),
     cxx::ReplaceHalideComputeAtToStoreAtCall::ID(),
-    cxx::ReplaceHalideStoreAtToComputeAtCall::ID()
+    cxx::ReplaceHalideStoreAtToComputeAtCall::ID(),
+
+#define HALIDE_GEN_MUTATOR(KindName, ClassName, IdString, IrmClass, Description)                   \
+  cxx::ClassName::ID(),
+#include "mull/Mutators/CXX/HalideGeneratedMutators.def"
   };
 
   groupsMapping[Halide_BoundaryConditions()] = {
@@ -335,6 +339,10 @@ void MutatorsFactory::init() {
   addMutator<cxx::ReplaceHalideParallelToUnrollCall>(mutatorsMapping);
   addMutator<cxx::ReplaceHalideComputeAtToStoreAtCall>(mutatorsMapping);
   addMutator<cxx::ReplaceHalideStoreAtToComputeAtCall>(mutatorsMapping);
+
+#define HALIDE_GEN_MUTATOR(KindName, ClassName, IdString, IrmClass, Description)                   \
+  addMutator<cxx::ClassName>(mutatorsMapping);
+#include "mull/Mutators/CXX/HalideGeneratedMutators.def"
 
   /// Halide BoundaryConditions swaps (AST route only).
   addMutator<cxx::HalideRepeatEdgeToRepeatImage>(mutatorsMapping);
