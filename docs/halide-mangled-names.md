@@ -302,3 +302,92 @@ To check a single name against the built library:
 llvm-nm -D --defined-only <halide-build>/src/libHalide.so \
   | awk '{print $NF}' | grep '^_ZN6Halide4Func9vectorize'
 ```
+
+---
+
+## 7. Full operator census (relational, logical, bitwise, assignment, unary)
+
+Taken from `libHalide.so.16.0.0`'s symbol table with an exact Itanium
+length-prefix parse. A loose `\d+[A-Za-z_]*` class-name pattern over-matches
+badly -- it reports 158 `operator<=` overloads where there are 3, by letting the
+class name absorb part of the following identifier.
+
+### What `Halide::Expr` actually overloads
+
+| C++ operator | Itanium | overloads | note |
+|---|---|---|---|
+| `+ - * /` | `pl mi ml dv` | 6, 5, 6, 5 | |
+| `%` | `rm` | 5 | |
+| `< > <= >=` | `lt gt le ge` | 3, 3, 3, 3 | `>=` uses `const Expr &` for its mixed forms |
+| `== !=` | `eq ne` | 4, 3 | `==` also has an `(Expr, float)` form |
+| `&& \|\|` | `aa oo` | 3, 3 | mixed forms take `bool`, not `int` |
+| `& \| ^` | `an or eo` | 3, 3, 3 | |
+| `<< >>` | `ls rs` | 31, 2 | 29 of `<<`'s are `std::ostream` overloads |
+| `+= -= *= /=` | `pL mI mL dV` | 5 each | free form plus `FuncRef` and `FuncTupleElementRef` |
+| `! - ~` (unary) | `nt ng co` | 1, 1, 1 | all three are `Expr(Expr)`, so mutually swappable |
+| `min` / `max` | — | 3, 3 | plain functions, fully symmetric |
+
+### What it does not overload
+
+| C++ operator | Itanium | symbols |
+|---|---|---|
+| `++` / `--` | `pp` / `mm` | **0** |
+| `%=` | `rM` | **0** |
+| `&=` `\|=` `^=` | `aN` `oR` `eO` | **0** |
+| `<<=` `>>=` | `lS` `rS` | **0** |
+
+So Mull's `cxx_post_inc_to_post_dec`, `cxx_pre_inc_to_pre_dec`,
+`cxx_post_dec_to_post_inc`, `cxx_pre_dec_to_pre_inc`,
+`cxx_rem_assign_to_div_assign`, `cxx_and_assign_to_or_assign`,
+`cxx_or_assign_to_and_assign`, `cxx_xor_assign_to_or_assign`,
+`cxx_lshift_assign_to_rshift_assign` and `cxx_rshift_assign_to_lshift_assign`
+have **no Halide analogue at all** -- not a gap in this work, an absence in the
+DSL's API.
+
+Mull's `cxx_bitwise_not_to_noop`, `cxx_minus_to_noop` and `cxx_remove_negation`
+replace an expression with its operand. `irm::IRMutation` can only redirect a
+call to another function of the same type, so a removal is not expressible on
+this route. The three unary operators are swapped against each other instead,
+which reaches the same call sites with a same-signature mutation.
+`cxx_assign_const` / `cxx_init_const` mutate constants rather than calls and
+have no call-swap form.
+
+### Implemented operators and their mapping counts
+
+| operator | swap | mappings |
+|---|---|---|
+| `Halide_lt_to_ge` | < to >= | 1 |
+| `Halide_lt_to_le` | < to <= | 3 |
+| `Halide_le_to_gt` | <= to > | 3 |
+| `Halide_le_to_lt` | <= to < | 3 |
+| `Halide_gt_to_ge` | > to >= | 1 |
+| `Halide_gt_to_le` | > to <= | 3 |
+| `Halide_ge_to_gt` | >= to > | 1 |
+| `Halide_ge_to_lt` | >= to < | 1 |
+| `Halide_eq_to_ne` | == to != | 3 |
+| `Halide_ne_to_eq` | != to == | 3 |
+| `Halide_logical_and_to_or` | && to || | 3 |
+| `Halide_logical_or_to_and` | || to && | 3 |
+| `Halide_and_to_or` | & to | | 3 |
+| `Halide_or_to_and` | | to & | 3 |
+| `Halide_xor_to_or` | ^ to | | 3 |
+| `Halide_lshift_to_rshift` | << to >> | 2 |
+| `Halide_rshift_to_lshift` | >> to << | 2 |
+| `Halide_rem_to_div` | % to / | 5 |
+| `Halide_add_assign_to_sub_assign` | += to -= | 5 |
+| `Halide_sub_assign_to_add_assign` | -= to += | 5 |
+| `Halide_mul_assign_to_div_assign` | *= to /= | 5 |
+| `Halide_div_assign_to_mul_assign` | /= to *= | 5 |
+| `Halide_not_to_negate` | ! to unary - | 1 |
+| `Halide_not_to_bitwise_not` | ! to ~ | 1 |
+| `Halide_negate_to_not` | unary - to ! | 1 |
+| `Halide_negate_to_bitwise_not` | unary - to ~ | 1 |
+| `Halide_bitwise_not_to_not` | ~ to ! | 1 |
+| `Halide_bitwise_not_to_negate` | ~ to unary - | 1 |
+| `Halide_min_to_max` | min to max | 3 |
+| `Halide_max_to_min` | max to min | 3 |
+
+A swap is emitted only where both overloads share a parameter encoding, which
+is why the counts differ. `lt_to_ge` gets 1 rather than 3 because `operator>=`
+takes `const Expr &` for its mixed forms; `lshift_to_rshift` gets 2 rather than
+31 because `operator>>` has none of `<<`'s `std::ostream` overloads.
