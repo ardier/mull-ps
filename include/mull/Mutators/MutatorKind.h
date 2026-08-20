@@ -67,6 +67,36 @@ enum class MutatorKind {
   CXX_InitConst,
 
   CXX_RemoveNegation,
+
+  /// Halide-native operators. These mutate calls to Halide's own overloaded
+  /// operators and schedule directives, matched by Itanium-mangled callee name
+  /// (see libirm's HalideReplacement). They are kept in one contiguous block so
+  /// junk detection and reporting can range-check on it.
+  Halide_ReplaceHalideAddToMulCall,
+  Halide_ReplaceHalideAddToSubCall,
+  Halide_ReplaceHalideAddToDivCall,
+
+  Halide_ReplaceHalideSubToAddCall,
+  Halide_ReplaceHalideSubToMulCall,
+  Halide_ReplaceHalideSubToDivCall,
+
+  Halide_ReplaceHalideMulToAddCall,
+  Halide_ReplaceHalideMulToSubCall,
+  Halide_ReplaceHalideMulToDivCall,
+
+  Halide_ReplaceHalideDivToMulCall,
+  Halide_ReplaceHalideDivToSubCall,
+  Halide_ReplaceHalideDivToAddCall,
+
+  /// Schedule directives -- no C++/GPL sibling operator exists for these.
+  Halide_ReplaceVectorizeToUnrollCall,
+  Halide_ReplaceVectorizeToParallelCall,
+  Halide_ReplaceUnrollToVectorizeCall,
+  Halide_ReplaceUnrollToParallelCall,
+  Halide_ReplaceParallelToVectorizeCall,
+  Halide_ReplaceParallelToUnrollCall,
+  Halide_ReplaceComputeAtToStoreAtCall,
+  Halide_ReplaceStoreAtToComputeAtCall,
 };
 
 std::string MutationKindToString(MutatorKind mutatorKind);

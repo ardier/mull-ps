@@ -4,6 +4,7 @@
 #include "mull/JunkDetection/CXX/Visitors/NegateConditionVisitor.h"
 #include "mull/JunkDetection/CXX/Visitors/RemoveVoidFunctionVisitor.h"
 #include "mull/JunkDetection/CXX/Visitors/ReplaceCallVisitor.h"
+#include "mull/JunkDetection/CXX/Visitors/ReplaceHalideCallVisitor.h"
 #include "mull/JunkDetection/CXX/Visitors/UnaryVisitor.h"
 #include "mull/JunkDetection/CXX/Visitors/VarDeclVisitor.h"
 #include "mull/MutationPoint.h"
@@ -13,6 +14,16 @@
 
 using namespace mull;
 
+/// Every Halide mutator's identifier is built from this prefix
+/// (Halide_add_to_sub, Halide_mul_to_div, ...), see
+/// lib/Mutators/CXX/HalideMutators.cpp. Matching on the prefix keeps newly
+/// added operators exempt without another edit here.
+static const char *const kHalideMutatorPrefix = "Halide_";
+
+static bool isHalideMutator(const std::string &mutatorIdentifier) {
+  return mutatorIdentifier.rfind(kHalideMutatorPrefix, 0) == 0;
+}
+
 CXXJunkDetector::CXXJunkDetector(const MullDiagnostics &diagnostics, ASTStorage &astStorage)
     : diagnostics(diagnostics), astStorage(astStorage) {}
 
@@ -20,6 +31,36 @@ static const clang::Stmt *findMutantExpression(MutationPoint *point,
                                                VisitorParameters &visitorParameters,
                                                clang::Decl *decl) {
   switch (point->getMutator()->mutatorKind()) {
+
+  /// Halide operators (arithmetic and schedule directives alike) are all
+  /// resolved by the same visitor: it locates the enclosing Halide API call
+  /// expression -- an operator call, a member call on Func/Stage, or a plain
+  /// call -- covering the whole family without a per-operator case.
+  case MutatorKind::Halide_ReplaceHalideAddToMulCall:
+  case MutatorKind::Halide_ReplaceHalideAddToSubCall:
+  case MutatorKind::Halide_ReplaceHalideAddToDivCall:
+  case MutatorKind::Halide_ReplaceHalideSubToMulCall:
+  case MutatorKind::Halide_ReplaceHalideSubToAddCall:
+  case MutatorKind::Halide_ReplaceHalideSubToDivCall:
+  case MutatorKind::Halide_ReplaceHalideMulToAddCall:
+  case MutatorKind::Halide_ReplaceHalideMulToSubCall:
+  case MutatorKind::Halide_ReplaceHalideMulToDivCall:
+  case MutatorKind::Halide_ReplaceHalideDivToMulCall:
+  case MutatorKind::Halide_ReplaceHalideDivToSubCall:
+  case MutatorKind::Halide_ReplaceHalideDivToAddCall:
+  case MutatorKind::Halide_ReplaceVectorizeToUnrollCall:
+  case MutatorKind::Halide_ReplaceVectorizeToParallelCall:
+  case MutatorKind::Halide_ReplaceUnrollToVectorizeCall:
+  case MutatorKind::Halide_ReplaceUnrollToParallelCall:
+  case MutatorKind::Halide_ReplaceParallelToVectorizeCall:
+  case MutatorKind::Halide_ReplaceParallelToUnrollCall:
+  case MutatorKind::Halide_ReplaceComputeAtToStoreAtCall:
+  case MutatorKind::Halide_ReplaceStoreAtToComputeAtCall: {
+    ReplaceHalideCallVisitor visitor(visitorParameters);
+    visitor.TraverseDecl(decl);
+    return visitor.foundMutant();
+  }
+
   case MutatorKind::CXX_RemoveVoidCall: {
     RemoveVoidFunctionVisitor visitor(visitorParameters);
     visitor.TraverseDecl(decl);
@@ -174,23 +215,33 @@ static const clang::Stmt *findMutantExpression(MutationPoint *point,
 }
 
 bool CXXJunkDetector::isJunk(MutationPoint *point) {
+  const std::string mutatorIdentifier = point->getMutatorIdentifier();
+
   if (point->getSourceLocation().isNull()) {
+    diagnostics.debug("CXXJunkDetector: [" + mutatorIdentifier + "] junk: source location is null");
     return true;
   }
 
   ASTUnitWrapper *ast = astStorage.findAST(point->getSourceLocation());
   if (!ast->hasAST()) {
+    diagnostics.debug("CXXJunkDetector: [" + mutatorIdentifier + "] junk: no AST available");
     return true;
   }
   clang::SourceLocation location = ast->getLocation(point->getSourceLocation());
   clang::SourceManager &sourceManager = ast->getSourceManager();
 
-  if (ast->isInSystemHeader(location)) {
+  /// Halide mutation points legitimately land in system headers: the operators
+  /// being replaced are Halide's own inline/templated API, so the call site
+  /// Mull resolves is inside Halide's headers rather than the generator source.
+  /// Exempt them from the system-header filter.
+  if (ast->isInSystemHeader(location) && !isHalideMutator(mutatorIdentifier)) {
+    diagnostics.debug("CXXJunkDetector: [" + mutatorIdentifier + "] junk: in system header");
     return true;
   }
 
   clang::Decl *decl = ast->getDecl(location);
   if (!decl) {
+    diagnostics.debug("CXXJunkDetector: [" + mutatorIdentifier + "] junk: no enclosing decl");
     return true;
   }
 
@@ -201,6 +252,8 @@ bool CXXJunkDetector::isJunk(MutationPoint *point) {
   const clang::Stmt *mutantExpression = findMutantExpression(point, visitorParameters, decl);
 
   if (!mutantExpression) {
+    diagnostics.debug("CXXJunkDetector: [" + mutatorIdentifier +
+                      "] junk: no matching mutant expression");
     return true;
   }
 

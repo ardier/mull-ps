@@ -3,6 +3,7 @@
 #include "mull/Mutators/CXX/ArithmeticMutators.h"
 #include "mull/Mutators/CXX/BitwiseMutators.h"
 #include "mull/Mutators/CXX/CallMutators.h"
+#include "mull/Mutators/CXX/HalideMutators.h"
 #include "mull/Mutators/CXX/NumberMutators.h"
 #include "mull/Mutators/CXX/RelationalMutators.h"
 #include "mull/Mutators/CXX/RemoveNegation.h"
@@ -73,6 +74,34 @@ void MutatorsFactory::init() {
   addMutator<cxx::LessThanToLessOrEqual>(mutatorsMapping);
   addMutator<cxx::GreaterOrEqualToGreaterThan>(mutatorsMapping);
   addMutator<cxx::GreaterThanToGreaterOrEqual>(mutatorsMapping);
+
+  /// Halide-native operators. Registered here so they are addressable by ID and
+  /// via the `halide_mutator` group (defined in rust/mull-filters/src/
+  /// mutator_groups.rs). Deliberately NOT folded into cxx_all / cxx_default:
+  /// those two groups are the stock-C++ baseline arm of the experiments, and
+  /// silently including DSL-aware mutants there would make the two arms
+  /// incomparable.
+  addMutator<cxx::ReplaceHalideAddToMulCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideAddToSubCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideAddToDivCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideSubToMulCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideSubToAddCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideSubToDivCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideMulToAddCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideMulToSubCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideMulToDivCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideDivToMulCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideDivToSubCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideDivToAddCall>(mutatorsMapping);
+
+  addMutator<cxx::ReplaceHalideVectorizeToUnrollCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideVectorizeToParallelCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideUnrollToVectorizeCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideUnrollToParallelCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideParallelToVectorizeCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideParallelToUnrollCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideComputeAtToStoreAtCall>(mutatorsMapping);
+  addMutator<cxx::ReplaceHalideStoreAtToComputeAtCall>(mutatorsMapping);
 }
 
 Mutator *MutatorsFactory::getMutator(const string &mutatorId) {

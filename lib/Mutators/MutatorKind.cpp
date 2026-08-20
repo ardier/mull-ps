@@ -134,6 +134,66 @@ std::string MutationKindToString(MutatorKind mutatorKind) {
   case MutatorKind::CXX_RemoveNegation: {
     return "Remove Unary Negation";
   }
+  case MutatorKind::Halide_ReplaceHalideAddToMulCall: {
+    return "Halide: Add to Mul";
+  }
+  case MutatorKind::Halide_ReplaceHalideAddToSubCall: {
+    return "Halide: Add to Sub";
+  }
+  case MutatorKind::Halide_ReplaceHalideAddToDivCall: {
+    return "Halide: Add to Div";
+  }
+  case MutatorKind::Halide_ReplaceHalideSubToAddCall: {
+    return "Halide: Sub to Add";
+  }
+  case MutatorKind::Halide_ReplaceHalideSubToMulCall: {
+    return "Halide: Sub to Mul";
+  }
+  case MutatorKind::Halide_ReplaceHalideSubToDivCall: {
+    return "Halide: Sub to Div";
+  }
+  case MutatorKind::Halide_ReplaceHalideMulToAddCall: {
+    return "Halide: Mul to Add";
+  }
+  case MutatorKind::Halide_ReplaceHalideMulToSubCall: {
+    return "Halide: Mul to Sub";
+  }
+  case MutatorKind::Halide_ReplaceHalideMulToDivCall: {
+    return "Halide: Mul to Div";
+  }
+  case MutatorKind::Halide_ReplaceHalideDivToMulCall: {
+    return "Halide: Div to Mul";
+  }
+  case MutatorKind::Halide_ReplaceHalideDivToSubCall: {
+    return "Halide: Div to Sub";
+  }
+  case MutatorKind::Halide_ReplaceHalideDivToAddCall: {
+    return "Halide: Div to Add";
+  }
+  case MutatorKind::Halide_ReplaceVectorizeToUnrollCall: {
+    return "Halide: Vectorize to Unroll";
+  }
+  case MutatorKind::Halide_ReplaceVectorizeToParallelCall: {
+    return "Halide: Vectorize to Parallel";
+  }
+  case MutatorKind::Halide_ReplaceUnrollToVectorizeCall: {
+    return "Halide: Unroll to Vectorize";
+  }
+  case MutatorKind::Halide_ReplaceUnrollToParallelCall: {
+    return "Halide: Unroll to Parallel";
+  }
+  case MutatorKind::Halide_ReplaceParallelToVectorizeCall: {
+    return "Halide: Parallel to Vectorize";
+  }
+  case MutatorKind::Halide_ReplaceParallelToUnrollCall: {
+    return "Halide: Parallel to Unroll";
+  }
+  case MutatorKind::Halide_ReplaceComputeAtToStoreAtCall: {
+    return "Halide: ComputeAt to StoreAt";
+  }
+  case MutatorKind::Halide_ReplaceStoreAtToComputeAtCall: {
+    return "Halide: StoreAt to ComputeAt";
+  }
   }
 }
 
