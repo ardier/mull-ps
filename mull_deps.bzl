@@ -119,8 +119,25 @@ def _find_clang_dylib(ctx, path, lib, version):
 def _find_llvm_dylib(ctx, path, lib, version):
     return _find_dylib(ctx, path, lib, "LLVM", version)
 
+def _local_irm_path(module_ctx):
+    """Path to a sibling libirm checkout, if one is present.
+
+    Upstream Mull pins libirm as an http_archive. The Halide fork needs libirm's
+    HalideReplacement, which upstream does not carry, so it substitutes a local
+    checkout -- the Bazel equivalent of the pre-0.27 fork's `vendor/libirm` git
+    submodule. Drop a `libirm-latest` checkout next to this workspace and it is
+    used automatically; with no such directory the upstream pin is used and the
+    build is byte-for-byte upstream.
+    """
+    workspace_root = module_ctx.path(Label("//:MODULE.bazel")).dirname
+    candidate = workspace_root.dirname.get_child("libirm-latest")
+    if candidate.exists:
+        return str(candidate)
+    return None
+
 def _mull_deps_extension(module_ctx):
     """Module extension to dynamically declare local LLVM repositories."""
+    local_irm = _local_irm_path(module_ctx)
     for mod in module_ctx.modules:
         for data in mod.tags.configure:
             for version in data.versions:
@@ -151,13 +168,20 @@ def _mull_deps_extension(module_ctx):
                         LIBDIR = libdir,
                     ),
                 )
-                http_archive(
-                    name = irm_repo_name,
-                    integrity = "sha256-8pmIPDJX0cgDlNljcIcWd73Wb2WB8cgK/086RxOyqrE=",
-                    urls = ["https://github.com/mull-project/libirm/archive/08eab0634575aeb721d07f05daf4a0aad8feba36.zip"],
-                    strip_prefix = "libirm-08eab0634575aeb721d07f05daf4a0aad8feba36",
-                    build_file_content = IRM_BUILD_FILE.format(LLVM_VERSION = version),
-                )
+                if local_irm != None:
+                    new_local_repository(
+                        name = irm_repo_name,
+                        path = local_irm,
+                        build_file_content = IRM_BUILD_FILE.format(LLVM_VERSION = version),
+                    )
+                else:
+                    http_archive(
+                        name = irm_repo_name,
+                        integrity = "sha256-8pmIPDJX0cgDlNljcIcWd73Wb2WB8cgK/086RxOyqrE=",
+                        urls = ["https://github.com/mull-project/libirm/archive/08eab0634575aeb721d07f05daf4a0aad8feba36.zip"],
+                        strip_prefix = "libirm-08eab0634575aeb721d07f05daf4a0aad8feba36",
+                        build_file_content = IRM_BUILD_FILE.format(LLVM_VERSION = version),
+                    )
 
     return modules.use_all_repos(module_ctx)
 
