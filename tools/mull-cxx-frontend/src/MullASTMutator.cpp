@@ -305,17 +305,29 @@ clang::CXXRecordDecl *MullASTMutator::lookupHalideInternalCall() {
   auto *halide =
       lookupSingle<clang::NamespaceDecl>(context.getTranslationUnitDecl(), context, "Halide");
   if (halide == nullptr) {
+    ifThenElseFailure = "namespace Halide not found";
     return nullptr;
   }
   auto *internal = lookupSingle<clang::NamespaceDecl>(halide, context, "Internal");
   if (internal == nullptr) {
+    ifThenElseFailure = "namespace Halide::Internal not found";
     return nullptr;
   }
   auto *call = lookupSingle<clang::CXXRecordDecl>(internal, context, "Call");
-  if (call == nullptr || !call->isCompleteDefinition()) {
+  if (call == nullptr) {
+    ifThenElseFailure = "Halide::Internal::Call not found";
     return nullptr;
   }
-  return call;
+  /// Name lookup can hand back a forward declaration -- Halide's mega-header
+  /// declares `struct Call;` before defining it, and which redeclaration comes
+  /// first out of DeclContext::lookup() is not something to rely on. Ask for
+  /// the definition explicitly instead of testing whatever we happened to get.
+  clang::CXXRecordDecl *callDefinition = call->getDefinition();
+  if (callDefinition == nullptr) {
+    ifThenElseFailure = "Halide::Internal::Call is declared but not defined here";
+    return nullptr;
+  }
+  return callDefinition;
 }
 
 clang::Expr *MullASTMutator::buildDeclReference(clang::DeclContext *declContext,
@@ -396,7 +408,7 @@ clang::Expr *MullASTMutator::buildIfThenElseCall(clang::CallExpr *selectCallExpr
 
   clang::CXXRecordDecl *callClass = lookupHalideInternalCall();
   if (callClass == nullptr) {
-    ifThenElseFailure = "Halide::Internal::Call is not declared in this translation unit";
+    /// lookupHalideInternalCall() already recorded which step failed.
     return nullptr;
   }
 
