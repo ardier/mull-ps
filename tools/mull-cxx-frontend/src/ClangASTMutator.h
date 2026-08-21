@@ -29,8 +29,12 @@ public:
                   ASTInstrumentation &instrumentation)
       : context(context), factory(factory), instrumentation(instrumentation) {}
 
-  void replaceExpression(clang::Expr *oldExpr, clang::Expr *newExpr, std::string identifier);
-  void replaceStatement(clang::Stmt *oldStmt, clang::Stmt *newStmt, std::string identifier);
+  /// Splices `newExpr` (guarded by a getenv() check on `identifier`) in place of
+  /// `oldExpr`. Returns false when the enclosing node cannot be found, in which
+  /// case the AST is left untouched and the mutation must not be recorded.
+  bool replaceExpression(clang::Expr *oldExpr, clang::Expr *newExpr, std::string identifier);
+  /// Same contract as replaceExpression(), for statements.
+  bool replaceStatement(clang::Stmt *oldStmt, clang::Stmt *newStmt, std::string identifier);
   clang::IfStmt *createMutatedStatement(clang::Stmt *oldStmt, clang::Stmt *newStmt,
                                         std::string identifier);
   clang::ConditionalOperator *createMutatedExpression(clang::Expr *oldExpr, clang::Expr *newExpr,

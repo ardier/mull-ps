@@ -23,8 +23,10 @@ void MullASTMutator::performUnaryOperatorOpcodeMutation(
                                   oldUnaryOperator->getType(),
                                   oldUnaryOperator->getValueKind());
 
-  clangAstMutator.replaceExpression(
-      oldUnaryOperator, newUnaryOperator, mutation.mutationIdentifier);
+  if (!clangAstMutator.replaceExpression(
+          oldUnaryOperator, newUnaryOperator, mutation.mutationIdentifier)) {
+    return;
+  }
   instrumentation.addMutantStringDefinition(mutation.mutationBinaryRecord,
                                             static_cast<int>(mutation.mutationType),
                                             mutation.beginLine,
@@ -34,9 +36,11 @@ void MullASTMutator::performUnaryOperatorOpcodeMutation(
 void MullASTMutator::performUnaryOperatorRemovalMutation(
     ASTMutationPoint &mutation, UnaryOperatorRemovalMutation &unaryNotToNoopMutator) {
 
-  clangAstMutator.replaceExpression(unaryNotToNoopMutator.unaryOperator,
-                                    unaryNotToNoopMutator.unaryOperator->getSubExpr(),
-                                    mutation.mutationIdentifier);
+  if (!clangAstMutator.replaceExpression(unaryNotToNoopMutator.unaryOperator,
+                                         unaryNotToNoopMutator.unaryOperator->getSubExpr(),
+                                         mutation.mutationIdentifier)) {
+    return;
+  }
 
   instrumentation.addMutantStringDefinition(mutation.mutationBinaryRecord,
                                             static_cast<int>(mutation.mutationType),
@@ -69,8 +73,10 @@ void MullASTMutator::performBinaryMutation(ASTMutationPoint &mutation,
                                                      oldBinaryOperator->getValueKind());
   }
 
-  clangAstMutator.replaceExpression(
-      oldBinaryOperator, newBinaryOperator, mutation.mutationIdentifier);
+  if (!clangAstMutator.replaceExpression(
+          oldBinaryOperator, newBinaryOperator, mutation.mutationIdentifier)) {
+    return;
+  }
   instrumentation.addMutantStringDefinition(mutation.mutationBinaryRecord,
                                             static_cast<int>(mutation.mutationType),
                                             mutation.beginLine,
@@ -80,7 +86,9 @@ void MullASTMutator::performBinaryMutation(ASTMutationPoint &mutation,
 void MullASTMutator::performRemoveVoidMutation(ASTMutationPoint &mutation,
                                                RemoveVoidMutation &removeVoidMutator) {
   clang::CallExpr *callExpr = clang::dyn_cast<clang::CallExpr>(mutation.mutableStmt);
-  clangAstMutator.replaceStatement(callExpr, nullptr, mutation.mutationIdentifier);
+  if (!clangAstMutator.replaceStatement(callExpr, nullptr, mutation.mutationIdentifier)) {
+    return;
+  }
 
   instrumentation.addMutantStringDefinition(mutation.mutationBinaryRecord,
                                             static_cast<int>(mutation.mutationType),
@@ -103,7 +111,10 @@ void MullASTMutator::performReplaceScalarMutation(
     notImplemented();
   }
 
-  clangAstMutator.replaceExpression(callExpr, replacementLiteral, mutation.mutationIdentifier);
+  if (!clangAstMutator.replaceExpression(
+          callExpr, replacementLiteral, mutation.mutationIdentifier)) {
+    return;
+  }
   instrumentation.addMutantStringDefinition(mutation.mutationBinaryRecord,
                                             static_cast<int>(mutation.mutationType),
                                             mutation.beginLine,
@@ -126,10 +137,12 @@ void MullASTMutator::performReplaceNumericAssignmentMutation(
     notImplemented();
   }
 
-  clangAstMutator.replaceExpression(
-      replaceNumericAssignmentMutator.assignmentBinaryOperator->getRHS(),
-      replacementLiteral,
-      mutation.mutationIdentifier);
+  if (!clangAstMutator.replaceExpression(
+          replaceNumericAssignmentMutator.assignmentBinaryOperator->getRHS(),
+          replacementLiteral,
+          mutation.mutationIdentifier)) {
+    return;
+  }
   instrumentation.addMutantStringDefinition(mutation.mutationBinaryRecord,
                                             static_cast<int>(mutation.mutationType),
                                             mutation.beginLine,
@@ -154,8 +167,10 @@ void MullASTMutator::performReplaceNumericInitAssignmentMutation(
     notImplemented();
   }
 
-  clangAstMutator.replaceExpression(
-      oldAssignedExpr, replacementLiteral, mutation.mutationIdentifier);
+  if (!clangAstMutator.replaceExpression(
+          oldAssignedExpr, replacementLiteral, mutation.mutationIdentifier)) {
+    return;
+  }
   instrumentation.addMutantStringDefinition(mutation.mutationBinaryRecord,
                                             static_cast<int>(mutation.mutationType),
                                             mutation.beginLine,
