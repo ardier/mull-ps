@@ -34,6 +34,29 @@ template <> struct llvm::yaml::MappingTraits<SliceConfig> {
   }
 };
 
+LLVM_YAML_IS_SEQUENCE_VECTOR(RegionBoundaryConfig)
+
+template <> struct llvm::yaml::MappingTraits<RegionBoundaryConfig> {
+  static void mapping(llvm::yaml::IO &io, RegionBoundaryConfig &config) {
+    io.mapOptional("file", config.file);
+    io.mapOptional("boilerplateEnd", config.boilerplateEnd);
+    io.mapOptional("generatorSpecificEnd", config.generatorSpecificEnd);
+  }
+};
+
+template <> struct llvm::yaml::MappingTraits<RegionsConfig> {
+  static void mapping(llvm::yaml::IO &io, RegionsConfig &config) {
+    /// Reached only when the `regions:` key is present, which is what
+    /// `specified` records: without it, region tagging never reads a file and
+    /// every record is tagged `unknown`.
+    config.specified = true;
+    io.mapOptional("autodetect", config.autodetect);
+    io.mapOptional("namespaceCloseMarker", config.namespaceCloseMarker);
+    io.mapOptional("functionAttrsMarker", config.functionAttrsMarker);
+    io.mapOptional("boundaries", config.boundaries);
+  }
+};
+
 template <> struct llvm::yaml::MappingTraits<DebugConfig> {
   static void mapping(llvm::yaml::IO &io, DebugConfig &config) {
     io.mapOptional("printIR", config.printIR);
@@ -70,6 +93,7 @@ template <> struct llvm::yaml::MappingTraits<Configuration> {
     io.mapOptional("slice", config.slice);
     io.mapOptional("dumpMutantsTo", config.dumpMutantsTo);
     io.mapOptional("dumpOnly", config.dumpOnly);
+    io.mapOptional("regions", config.regions);
     io.mapOptional("debug", config.debug);
   }
 };

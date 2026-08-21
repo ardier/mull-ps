@@ -10,6 +10,7 @@ set(mull_sources
   Driver.cpp
   BitcodeMetadataReader.cpp
   MutantDump.cpp
+  RegionClassifier.cpp
   MutationsFinder.cpp
   Mutant.cpp
 

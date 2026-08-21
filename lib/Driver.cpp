@@ -192,7 +192,9 @@ void mull::mutateBitcode(llvm::Module &module) {
   /// still report its mutants. Absent `dumpMutantsTo`, nothing below runs.
   std::unique_ptr<MutantDump> mutantDump;
   if (!configuration.dumpMutantsTo.empty()) {
-    mutantDump = std::make_unique<MutantDump>(diagnostics, configuration.dumpMutantsTo);
+    mutantDump = std::make_unique<MutantDump>(
+        diagnostics, configuration.dumpMutantsTo, configuration.regions);
+    mutantDump->recordPopulation(mutations);
   } else if (configuration.dumpOnly) {
     diagnostics.warning("dumpOnly is set but dumpMutantsTo is empty, so there is nothing to "
                         "dump; continuing with the normal mutation pipeline.");

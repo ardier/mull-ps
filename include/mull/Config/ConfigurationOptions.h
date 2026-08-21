@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
 namespace mull {
 
 enum class IDEDiagnosticsKind { None, Survived, Killed, All };
@@ -22,6 +25,35 @@ struct SliceConfig {
   unsigned index = 0;
   unsigned count = 0;
   bool specified = false;
+};
+
+/// One explicit boilerplate/generator boundary, for a set of files matched by
+/// regex. Line numbers are 1-based and inclusive, matching the line numbers in
+/// a mutation point's user identifier.
+struct RegionBoundaryConfig {
+  std::string file;
+  unsigned boilerplateEnd = 0;
+  unsigned generatorSpecificEnd = 0;
+};
+
+/// Region tagging for the mutant dump. Halide's C backend emits each app as a
+/// single file whose leading ~3.4k lines are a byte-identical SIMD-emulation
+/// prefix shared by every app, followed by the generator's own pipeline code
+/// and finally the argv/metadata wrappers. There are no #line directives and no
+/// provenance comments, so the split has to be recovered from line ranges.
+///
+/// The boundary differs per file (blur and camera_pipe are not harris), so it
+/// is never hardcoded: it either comes from `boundaries` or is derived from the
+/// file itself by `autodetect`, which reproduces the marker-based definition
+/// already used by the analysis scripts -- the last `namespaceCloseMarker` line
+/// before the first `functionAttrsMarker` line ends the boilerplate, and the
+/// second `functionAttrsMarker` line ends the generator-specific body.
+struct RegionsConfig {
+  bool specified = false;
+  bool autodetect = false;
+  std::string namespaceCloseMarker = "}  // namespace";
+  std::string functionAttrsMarker = "HALIDE_FUNCTION_ATTRS";
+  std::vector<RegionBoundaryConfig> boundaries;
 };
 
 struct DebugConfig {

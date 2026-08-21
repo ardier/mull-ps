@@ -53,6 +53,10 @@ struct Configuration {
   /// effect together with `dumpMutantsTo`.
   bool dumpOnly;
 
+  /// Region tagging for the dump. Absent means every record is tagged
+  /// `unknown` and nothing reads the source files.
+  RegionsConfig regions{};
+
   DebugConfig debug{};
 
   Configuration();

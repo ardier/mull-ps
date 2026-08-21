@@ -3,6 +3,7 @@
 #include "mull/Filters/SliceFilter.h"
 #include "mull/MutantDump.h"
 #include "mull/MutationPoint.h"
+#include "mull/RegionClassifier.h"
 #include <mull/Mutators/CXX/ArithmeticMutators.h>
 
 #include <algorithm>
@@ -40,7 +41,7 @@ std::vector<std::string> readLines(const std::string &path) {
 }
 
 void removeDump(const std::string &prefix) {
-  for (const char *suffix : { ".kept.txt", ".filtered.txt", ".filtered-by.txt" }) {
+  for (const char *suffix : { ".kept.txt", ".filtered.txt", ".filtered-by.txt", ".mutants.tsv" }) {
     std::remove((prefix + suffix).c_str());
   }
 }
@@ -131,15 +132,15 @@ TEST(MutantDump, recordFilterStageAttributesRejectionsToTheFilter) {
 
   std::vector<MutationPoint *> survivors(points.begin() + 1, points.end());
 
-  MutantDump dump(diagnostics, uniquePrefix("attribution"));
+  RegionsConfig noRegions;
+  MutantDump dump(diagnostics, uniquePrefix("attribution"), noRegions);
   dump.recordFilterStage(points, survivors, "first filter");
 
   /// The dropped point's identifier may be shared with a survivor, in which
   /// case it is legitimately present in both; the invariant that always holds
   /// is that the rejected identifier was recorded against the right filter.
   const std::string dropped = points.front()->getUserIdentifier();
-  ASSERT_EQ(dump.rejections().count(dropped), size_t(1));
-  ASSERT_EQ(dump.rejections().at(dropped), "first filter");
+  ASSERT_EQ(dump.rejectedBy(dropped), "first filter");
 }
 
 TEST(MutantDump, recordFilterStageRecordsNothingWhenAFilterRejectsNothing) {
@@ -152,9 +153,13 @@ TEST(MutantDump, recordFilterStageRecordsNothingWhenAFilterRejectsNothing) {
   std::vector<MutationPoint *> points = collectPoints(bitcode.get());
   ASSERT_NE(points.size(), size_t(0));
 
-  MutantDump dump(diagnostics, uniquePrefix("norejections"));
+  RegionsConfig noRegions;
+  MutantDump dump(diagnostics, uniquePrefix("norejections"), noRegions);
+  dump.recordPopulation(points);
   dump.recordFilterStage(points, points, "pass-through filter");
-  ASSERT_TRUE(dump.rejections().empty());
+  for (auto *point : points) {
+    ASSERT_EQ(dump.rejectedBy(point->getUserIdentifier()), "");
+  }
 }
 
 /// The chain property the Driver relies on: staging the filters one after the
@@ -171,7 +176,9 @@ TEST(MutantDump, chainedStagesPartitionThePopulation) {
   ASSERT_GT(points.size(), size_t(2));
 
   const std::string prefix = uniquePrefix("chain");
-  MutantDump dump(diagnostics, prefix);
+  RegionsConfig noRegions;
+  MutantDump dump(diagnostics, prefix, noRegions);
+  dump.recordPopulation(points);
 
   /// Two real filters in a chain, each taking a different, deterministic share.
   SliceFilter first(0, 2);
@@ -225,6 +232,17 @@ TEST(MutantDump, chainedStagesPartitionThePopulation) {
     ASSERT_EQ(filteredSet.count(line.substr(0, tab)), size_t(1));
   }
 
+  /// The table carries the same identifiers, in the same order, plus a header.
+  std::vector<std::string> rows = readLines(prefix + ".mutants.tsv");
+  ASSERT_EQ(rows.front(),
+            "identifier\tregion\tpoints\tkept_points\tfiltered_points\tfunctions\tfiltered_by");
+  ASSERT_EQ(rows.size(), all.size() + 1);
+  for (size_t i = 1; i < rows.size(); i++) {
+    ASSERT_EQ(rows[i].substr(0, rows[i].find('\t')), all[i - 1]);
+    /// Region tagging is off, so every row must say so rather than guess.
+    ASSERT_NE(rows[i].find("\tunknown\t"), std::string::npos) << rows[i];
+  }
+
   removeDump(prefix);
 }
 
@@ -242,7 +260,9 @@ TEST(MutantDump, writeProducesBothFilesWhenNothingWasFiltered) {
   ASSERT_NE(points.size(), size_t(0));
 
   const std::string prefix = uniquePrefix("nofiltering");
-  MutantDump dump(diagnostics, prefix);
+  RegionsConfig noRegions;
+  MutantDump dump(diagnostics, prefix, noRegions);
+  dump.recordPopulation(points);
   ASSERT_TRUE(dump.write(points));
 
   ASSERT_EQ(readLines(prefix + ".kept.txt"), MutantDump::sortedIdentifiers(points));
