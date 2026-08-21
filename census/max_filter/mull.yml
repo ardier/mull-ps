@@ -1,0 +1,12 @@
+mutators:
+  - cxx_default
+timeout: 99999999
+quiet: false
+includePaths:
+  - .*
+parallelization:
+  workers: 12
+dumpMutantsTo: /tmp/claude-1000/-home-ardi-project-dsl-mutants-halide/79c69961-ec65-41df-a717-1c36536a2c1f/scratchpad/census14/max_filter/max_filter
+dumpOnly: true
+regions:
+  autodetect: true

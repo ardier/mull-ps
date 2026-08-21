@@ -1,0 +1,56 @@
+[info] Using configuration /tmp/claude-1000/-home-ardi-project-dsl-mutants-halide/79c69961-ec65-41df-a717-1c36536a2c1f/scratchpad/census14/blur/mull.yml
+[info] Found compilation flags in the input bitcode
+[info] Gathering functions under test (threads: 1)
+
+       [################################] 1/1. Finished in 0ms
+[info] Instruction selection (threads: 12)
+
+       [#############-------------------] 20/46
+       [###########################-----] 39/46
+       [###############################-] 45/46
+       [################################] 46/46. Finished in 41ms
+[info] Searching mutants across functions (threads: 12)
+
+       [####################------------] 29/46
+       [###########################-----] 39/46
+       [################################] 46/46. Finished in 21ms
+[info] Applying filter: no debug info (threads: 12)
+
+       [################################] 2310/2310. Finished in 1ms
+[info] Applying filter: file path (threads: 12)
+
+       [########------------------------] 644/2310
+       [################################] 2310/2310. Finished in 11ms
+[info] Applying filter: junk (threads: 12)
+
+       [--------------------------------] 45/2310
+       [##------------------------------] 178/2310
+       [####----------------------------] 309/2310
+       [######--------------------------] 439/2310
+       [#######-------------------------] 572/2310
+       [#########-----------------------] 703/2310
+       [###########---------------------] 832/2310
+       [#############-------------------] 961/2310
+       [###############-----------------] 1087/2310
+       [################----------------] 1203/2310
+       [##################--------------] 1325/2310
+       [####################------------] 1444/2310
+       [#####################-----------] 1565/2310
+       [#######################---------] 1680/2310
+       [########################--------] 1752/2310
+       [#########################-------] 1819/2310
+       [##########################------] 1882/2310
+       [##########################------] 1947/2310
+       [###########################-----] 2018/2310
+       [#############################---] 2127/2310
+       [###############################-] 2241/2310
+       [################################] 2310/2310. Finished in 404ms
+[info] Dumping mutant population (threads: 1)
+[info] regions: /tmp/claude-1000/-home-ardi-project-dsl-mutants-halide/79c69961-ec65-41df-a717-1c36536a2c1f/scratchpad/src14/blur/halide_blur.halide_generated.cpp: boilerplate ends at line 3446, generator-specific ends at line 4204
+[info] Mutant population dumped to /tmp/claude-1000/-home-ardi-project-dsl-mutants-halide/79c69961-ec65-41df-a717-1c36536a2c1f/scratchpad/census14/blur/blur.{kept,filtered,filtered-by}.txt and .mutants.tsv: 347 kept, 1316 filtered (1663 distinct identifiers over 2310 points, 347 of them kept)
+[info]   region boilerplate: 15 kept, 60 filtered
+[info]   region generator_specific: 331 kept, 1230 filtered
+[info]   region wrapper_metadata: 1 kept, 26 filtered
+
+       [################################] 1/1. Finished in 3ms
+[info] dumpOnly is set: stopping before the clone phase. The module is left unmutated, so the object file this compilation produces is a normal, uninstrumented one.

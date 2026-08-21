@@ -1,0 +1,8 @@
+app: depthwise_separable_conv
+source_tree: HM-armc
+remote_path: swsec01:/mnt/scratch1/ardi/dsl_mut/HM-armc/mutation/lowered-cpp/depthwise_separable_conv/depthwise_separable_conv.halide_generated.cpp
+local_copy_sha256: 06f246dd779678a7070d9fde251d95b25ab50b57d3c578b76651c326ad0ce43f
+emitted_lines: 7064
+compile_check: clang++ -std=c++17 -fsyntax-only -Wno-psabi -- 0 errors (verified 2026-08-21T15:43:26Z)
+mull_config: mutators [cxx_default], dumpMutantsTo set, dumpOnly true, regions.autodetect true, workers 12
+mull_frontend: mull-ir-frontend-14 built from mull-ps@wip commit 5eb72c8d (dumpOnly/regions/lineRanges series)
