@@ -40,6 +40,12 @@ public:
   void
   performHalideCalleeSwapMutation(ASTMutationPoint &mutation,
                                   HalideCalleeSwapMutation &halideCalleeSwapMutator) override;
+  void
+  performHalideArgumentSwapMutation(ASTMutationPoint &mutation,
+                                    HalideArgumentSwapMutation &halideArgumentSwapMutator) override;
+  void performHalideSelectToIfThenElseMutation(
+      ASTMutationPoint &mutation,
+      HalideSelectToIfThenElseMutation &halideSelectToIfThenElseMutator) override;
 
 private:
   /// Re-resolves `callExpr`'s callee to `newCalleeName` in the callee's own
@@ -48,6 +54,36 @@ private:
   /// mutation is skipped rather than producing ill-formed AST.
   clang::Expr *buildCalleeSwappedCall(clang::CallExpr *callExpr,
                                       const std::string &newCalleeName);
+
+  /// Rebuilds `callExpr` with the arguments at the two given indices
+  /// exchanged. Returns nullptr when overload resolution fails on the
+  /// reordered arguments, in which case the mutation is skipped.
+  clang::Expr *buildArgumentSwappedCall(clang::CallExpr *callExpr, unsigned firstArgumentIndex,
+                                        unsigned secondArgumentIndex);
+
+  /// Builds
+  ///   Halide::Internal::Call::make(<value>.type(),
+  ///                                Halide::Internal::Call::if_then_else,
+  ///                                { cond, true_value, false_value },
+  ///                                Halide::Internal::Call::PureIntrinsic)
+  /// from the arguments of a Halide::select call. Returns nullptr when any part
+  /// of Halide::Internal::Call fails to resolve or Sema rejects the result.
+  clang::Expr *buildIfThenElseCall(clang::CallExpr *selectCallExpr);
+
+  /// Looks `name` up in `declContext` and builds a reference to it.
+  clang::Expr *buildDeclReference(clang::DeclContext *declContext, llvm::StringRef name,
+                                  clang::SourceLocation location);
+
+  /// The Halide::Internal::Call class, or nullptr when it is not declared in
+  /// this translation unit.
+  clang::CXXRecordDecl *lookupHalideInternalCall();
+
+  /// Builds `<value>.type()`, the Halide type of a Halide::Expr.
+  clang::Expr *buildTypeOfExpr(clang::Expr *value, clang::SourceLocation location);
+
+  /// Builds `Halide::cast(<halideType>, <value>)`.
+  clang::Expr *buildHalideCast(clang::Expr *halideType, clang::Expr *value,
+                               clang::SourceLocation location);
 
   clang::ASTContext &context;
   clang::Sema &sema;

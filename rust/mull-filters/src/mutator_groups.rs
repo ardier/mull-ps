@@ -32,11 +32,13 @@ pub fn get_group_definitions() -> Vec<(String, String)> {
         ("cxx_boundary", "cxx_le_to_lt, cxx_lt_to_le, cxx_ge_to_gt, cxx_gt_to_ge"),
         ("cxx_calls", "cxx_remove_void_call, cxx_replace_scalar_call"),
         ("experimental", "negate_mutator, cxx_logical"),
-        ("halide_mutator", "halide_arithmetic, halide_schedule, halide_generated, halide_boundary_conditions"),
+        ("halide_mutator", "halide_arithmetic, halide_schedule, halide_generated, halide_ast"),
+        ("halide_ast", "halide_boundary_conditions, halide_special_calls"),
         ("halide_arithmetic", "Halide_add_to_mul, Halide_add_to_sub, Halide_add_to_div, Halide_sub_to_mul, Halide_sub_to_add, Halide_sub_to_div, Halide_mul_to_add, Halide_mul_to_sub, Halide_mul_to_div, Halide_div_to_mul, Halide_div_to_sub, Halide_div_to_add"),
         ("halide_schedule", "Halide_vectorize_to_unroll, Halide_vectorize_to_parallel, Halide_unroll_to_vectorize, Halide_unroll_to_parallel, Halide_parallel_to_vectorize, Halide_parallel_to_unroll, Halide_compute_at_to_store_at, Halide_store_at_to_compute_at"),
         ("halide_generated", "Halide_lt_to_ge, Halide_lt_to_le, Halide_le_to_gt, Halide_le_to_lt, Halide_gt_to_ge, Halide_gt_to_le, Halide_ge_to_gt, Halide_ge_to_lt, Halide_eq_to_ne, Halide_ne_to_eq, Halide_logical_and_to_or, Halide_logical_or_to_and, Halide_and_to_or, Halide_or_to_and, Halide_xor_to_or, Halide_lshift_to_rshift, Halide_rshift_to_lshift, Halide_rem_to_div, Halide_add_assign_to_sub_assign, Halide_sub_assign_to_add_assign, Halide_mul_assign_to_div_assign, Halide_div_assign_to_mul_assign, Halide_not_to_negate, Halide_not_to_bitwise_not, Halide_negate_to_not, Halide_negate_to_bitwise_not, Halide_bitwise_not_to_not, Halide_bitwise_not_to_negate, Halide_min_to_max, Halide_max_to_min"),
         ("halide_boundary_conditions", "Halide_repeat_edge_to_repeat_image, Halide_repeat_edge_to_mirror_image, Halide_repeat_edge_to_mirror_interior, Halide_repeat_image_to_repeat_edge, Halide_repeat_image_to_mirror_image, Halide_repeat_image_to_mirror_interior, Halide_mirror_image_to_repeat_edge, Halide_mirror_image_to_repeat_image, Halide_mirror_image_to_mirror_interior, Halide_mirror_interior_to_repeat_edge, Halide_mirror_interior_to_repeat_image, Halide_mirror_interior_to_mirror_image"),
+        ("halide_special_calls", "Halide_select_swap_branches, Halide_clamp_swap_bounds, Halide_select_to_if_then_else"),
     ];
 
     groups.sort_by(|a, b| a.0.cmp(b.0));
@@ -150,7 +152,20 @@ fn expand_group(group: &str, result: &mut HashSet<String>) {
             expand_group("halide_arithmetic", result);
             expand_group("halide_schedule", result);
             expand_group("halide_generated", result);
+            expand_group("halide_ast", result);
+        }
+        // Umbrella over the operators implemented on the Clang AST route
+        // (mull-cxx-frontend) rather than by mangled-callee redirection.
+        "halide_ast" => {
             expand_group("halide_boundary_conditions", result);
+            expand_group("halide_special_calls", result);
+        }
+        // Halide API calls whose meaning lives in the arguments: select and
+        // clamp argument-order swaps, plus the eager->lazy select rewrite.
+        "halide_special_calls" => {
+            result.insert("Halide_select_swap_branches".to_string());
+            result.insert("Halide_clamp_swap_bounds".to_string());
+            result.insert("Halide_select_to_if_then_else".to_string());
         }
         // Census-driven expansion: one operator per Mull C++ mutator for which
         // Halide::Expr was empirically confirmed to overload the operator.

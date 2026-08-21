@@ -5,6 +5,7 @@
 #include "mull/Mutators/CXX/CallMutators.h"
 #include "mull/Mutators/CXX/HalideBoundaryConditionsMutators.h"
 #include "mull/Mutators/CXX/HalideMutators.h"
+#include "mull/Mutators/CXX/HalideSpecialCallMutators.h"
 #include "mull/Mutators/CXX/NumberMutators.h"
 #include "mull/Mutators/CXX/RelationalMutators.h"
 #include "mull/Mutators/CXX/RemoveNegation.h"
@@ -122,6 +123,12 @@ void MutatorsFactory::init() {
   addMutator<cxx::HalideMirrorInteriorToRepeatEdge>(mutatorsMapping);
   addMutator<cxx::HalideMirrorInteriorToRepeatImage>(mutatorsMapping);
   addMutator<cxx::HalideMirrorInteriorToMirrorImage>(mutatorsMapping);
+
+  /// Halide special-function-call operators (AST route, group
+  /// halide_special_calls). Same isolation rule: not in cxx_all / cxx_default.
+  addMutator<cxx::HalideSelectSwapBranches>(mutatorsMapping);
+  addMutator<cxx::HalideClampSwapBounds>(mutatorsMapping);
+  addMutator<cxx::HalideSelectToIfThenElse>(mutatorsMapping);
 }
 
 Mutator *MutatorsFactory::getMutator(const string &mutatorId) {

@@ -235,6 +235,15 @@ std::string MutationKindToString(MutatorKind mutatorKind) {
   case MutatorKind::Halide_BC_MirrorInteriorToMirrorImage: {
     return "Halide: BoundaryConditions mirror_interior to mirror_image";
   }
+  case MutatorKind::Halide_SelectSwapBranches: {
+    return "Halide: select branches swapped";
+  }
+  case MutatorKind::Halide_ClampSwapBounds: {
+    return "Halide: clamp bounds swapped";
+  }
+  case MutatorKind::Halide_SelectToIfThenElse: {
+    return "Halide: select to if_then_else";
+  }
   }
 }
 

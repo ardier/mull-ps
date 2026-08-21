@@ -119,6 +119,14 @@ enum class MutatorKind {
   Halide_BC_MirrorInteriorToRepeatEdge,
   Halide_BC_MirrorInteriorToRepeatImage,
   Halide_BC_MirrorInteriorToMirrorImage,
+
+  /// Halide special-function-call operators (AST route). The first two are
+  /// argument-order swaps on calls whose argument order carries the domain
+  /// meaning; the third moves an expression along the eager/lazy axis, which
+  /// has no C++ analogue at all.
+  Halide_SelectSwapBranches,
+  Halide_ClampSwapBounds,
+  Halide_SelectToIfThenElse,
 };
 
 std::string MutationKindToString(MutatorKind mutatorKind);

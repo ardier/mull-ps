@@ -121,6 +121,47 @@ public:
   ~HalideCalleeSwapMutation() {}
 };
 
+/// Reorders two arguments of a call expression, keeping the callee: `f(a, b)`
+/// becomes `f(b, a)`.
+///
+/// Used for the Halide API calls whose argument order carries the domain
+/// meaning: select(condition, true_value, false_value) and
+/// clamp(a, min_val, max_val).
+class HalideArgumentSwapMutation : public ASTMutation {
+public:
+  clang::CallExpr *callExpr;
+  unsigned firstArgumentIndex;
+  unsigned secondArgumentIndex;
+
+  HalideArgumentSwapMutation(clang::CallExpr *callExpr, unsigned firstArgumentIndex,
+                             unsigned secondArgumentIndex, std::string replacement)
+      : ASTMutation(std::move(replacement)), callExpr(callExpr),
+        firstArgumentIndex(firstArgumentIndex), secondArgumentIndex(secondArgumentIndex) {}
+
+  void performMutation(ASTMutationPoint &mutation, ASTMutator &mutator) {
+    mutator.performHalideArgumentSwapMutation(mutation, *this);
+  }
+  ~HalideArgumentSwapMutation() {}
+};
+
+/// Rewrites a call to Halide::select into the lazy Halide::Internal::Call
+/// intrinsic if_then_else, which evaluates only the branch it takes.
+///
+/// One-directional by necessity: there is no public Halide::if_then_else free
+/// function, so no user code can contain a call to swap back from.
+class HalideSelectToIfThenElseMutation : public ASTMutation {
+public:
+  clang::CallExpr *callExpr;
+
+  HalideSelectToIfThenElseMutation(clang::CallExpr *callExpr)
+      : ASTMutation("if_then_else(c, a, b)"), callExpr(callExpr) {}
+
+  void performMutation(ASTMutationPoint &mutation, ASTMutator &mutator) {
+    mutator.performHalideSelectToIfThenElseMutation(mutation, *this);
+  }
+  ~HalideSelectToIfThenElseMutation() {}
+};
+
 class ReplaceNumericInitAssignmentMutation : public ASTMutation {
 
 public:
