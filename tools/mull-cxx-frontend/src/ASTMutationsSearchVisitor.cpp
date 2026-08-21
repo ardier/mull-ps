@@ -6,6 +6,7 @@
 #include "mull/AST/MullClangCompatibility.h"
 
 #include <clang/AST/Decl.h>
+#include <clang/AST/DeclCXX.h>
 #include <clang/Basic/SourceManager.h>
 #include <clang/Lex/Lexer.h>
 
@@ -373,6 +374,40 @@ bool ASTMutationsSearchVisitor::VisitVarDecl(clang::VarDecl *D) {
   return true;
 }
 
+/// Sprint gap-fill (2026-08-21, Arm B classification): describes the static
+/// type of the AST node a mutation point rewrites, so a downstream classifier
+/// can tell a Halide-DSL mutation point (`Expr`/`Func`/`Var`/... in the
+/// generator's own file) from a plain-C++ one (`int`/`bool`/... loop
+/// counters, GeneratorParam-driven conditionals, helper-function internals)
+/// without re-deriving type information Clang already computed. Every
+/// ASTMutation constructed in this file hands recordMutationPoint an `Expr`
+/// (BinaryOperator/UnaryOperator/CallExpr are all Expr subclasses, and the
+/// VisitVarDecl path passes `D->getInit()`), so `dyn_cast<Expr>` is expected
+/// to succeed for every point cxx_default can produce; the empty fallback is
+/// defensive only.
+///
+/// `isHalideType` is computed structurally (walking the mutated node's
+/// canonical type down to a CXXRecordDecl and checking its enclosing
+/// namespace via the same `isInsideHalideNamespace` helper the Halide-native
+/// mutators use above), not by string-matching the printed type name, so it
+/// survives typedefs/usings and doesn't depend on the printing policy's
+/// namespace-qualification choices.
+static std::pair<std::string, bool> describeMutatedType(clang::ASTContext &context,
+                                                         clang::Stmt *stmt) {
+  const clang::Expr *expr = clang::dyn_cast_or_null<clang::Expr>(stmt);
+  if (expr == nullptr) {
+    return { "<non-expr>", false };
+  }
+  clang::QualType qualType = expr->getType();
+  std::string typeStr = qualType.getAsString(context.getPrintingPolicy());
+
+  bool isHalideType = false;
+  if (const clang::CXXRecordDecl *recordDecl = qualType.getCanonicalType()->getAsCXXRecordDecl()) {
+    isHalideType = isInsideHalideNamespace(recordDecl->getDeclContext());
+  }
+  return { typeStr, isHalideType };
+}
+
 void ASTMutationsSearchVisitor::recordMutationPoint(mull::MutatorKind mutatorKind,
                                                     std::unique_ptr<ASTMutation> mutation,
                                                     clang::Stmt *stmt,
@@ -419,8 +454,11 @@ void ASTMutationsSearchVisitor::recordMutationPoint(mull::MutatorKind mutatorKin
                                          endLine,
                                          endColumn);
 
+  const std::pair<std::string, bool> typeInfo = describeMutatedType(context, stmt);
   llvm::outs() << "Recording mutation point: " << astMutation->mutationIdentifier
-               << " (end: " << std::to_string(endLine) << ":" << std::to_string(endColumn) << ")\n";
+               << " (end: " << std::to_string(endLine) << ":" << std::to_string(endColumn) << ")"
+               << " TYPE:" << typeInfo.first << " HALIDE_TYPE:" << (typeInfo.second ? "1" : "0")
+               << "\n";
   astMutations.emplace_back(std::move(astMutation));
 }
 
