@@ -70,6 +70,11 @@ private:
   /// of Halide::Internal::Call fails to resolve or Sema rejects the result.
   clang::Expr *buildIfThenElseCall(clang::CallExpr *selectCallExpr);
 
+  /// Why the most recent buildIfThenElseCall() returned nullptr. Reported with
+  /// the skipped mutation: "could not build it" on its own is not actionable
+  /// when the operator depends on this many separate Sema lookups.
+  std::string ifThenElseFailure;
+
   /// Looks `name` up in `declContext` and builds a reference to it.
   clang::Expr *buildDeclReference(clang::DeclContext *declContext, llvm::StringRef name,
                                   clang::SourceLocation location);

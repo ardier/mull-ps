@@ -392,9 +392,11 @@ clang::Expr *MullASTMutator::buildHalideCast(clang::Expr *halideType, clang::Exp
 clang::Expr *MullASTMutator::buildIfThenElseCall(clang::CallExpr *selectCallExpr) {
   assert(selectCallExpr->getNumArgs() == 3);
   const clang::SourceLocation location = selectCallExpr->getBeginLoc();
+  ifThenElseFailure = "unknown";
 
   clang::CXXRecordDecl *callClass = lookupHalideInternalCall();
   if (callClass == nullptr) {
+    ifThenElseFailure = "Halide::Internal::Call is not declared in this translation unit";
     return nullptr;
   }
 
@@ -423,12 +425,14 @@ clang::Expr *MullASTMutator::buildIfThenElseCall(clang::CallExpr *selectCallExpr
   clang::Expr *trueValueType = buildTypeOfExpr(selectCallExpr, location);
   clang::Expr *falseValueType = buildTypeOfExpr(selectCallExpr, location);
   if (resultType == nullptr || trueValueType == nullptr || falseValueType == nullptr) {
+    ifThenElseFailure = "could not build <select>.type()";
     return nullptr;
   }
 
   clang::Expr *castTrueValue = buildHalideCast(trueValueType, trueValue, location);
   clang::Expr *castFalseValue = buildHalideCast(falseValueType, falseValue, location);
   if (castTrueValue == nullptr || castFalseValue == nullptr) {
+    ifThenElseFailure = "could not build Halide::cast(<type>, <value>)";
     return nullptr;
   }
   trueValue = castTrueValue;
@@ -438,6 +442,16 @@ clang::Expr *MullASTMutator::buildIfThenElseCall(clang::CallExpr *selectCallExpr
   clang::Expr *callType = buildDeclReference(callClass, "PureIntrinsic", location);
   clang::Expr *makeCallee = buildDeclReference(callClass, "make", location);
   if (intrinsicOp == nullptr || callType == nullptr || makeCallee == nullptr) {
+    ifThenElseFailure = "could not resolve ";
+    if (intrinsicOp == nullptr) {
+      ifThenElseFailure += "Call::if_then_else ";
+    }
+    if (callType == nullptr) {
+      ifThenElseFailure += "Call::PureIntrinsic ";
+    }
+    if (makeCallee == nullptr) {
+      ifThenElseFailure += "Call::make ";
+    }
     return nullptr;
   }
 
@@ -460,6 +474,8 @@ clang::Expr *MullASTMutator::buildIfThenElseCall(clang::CallExpr *selectCallExpr
                                                         makeArguments,
                                                         selectCallExpr->getRParenLoc());
   if (ifThenElseCall.isInvalid()) {
+    ifThenElseFailure = "Sema rejected the Call::make(...) call itself "
+                        "(overload resolution over the initializer list)";
     return nullptr;
   }
   return ifThenElseCall.get();
@@ -471,8 +487,8 @@ void MullASTMutator::performHalideSelectToIfThenElseMutation(
   clang::Expr *newCall = buildIfThenElseCall(oldCall);
   if (newCall == nullptr) {
     llvm::errs() << "mull-cxx-frontend: could not build a Halide::Internal::Call::make("
-                    "if_then_else) expression, skipping mutation: "
-                 << mutation.mutationIdentifier << "\n";
+                    "if_then_else) expression (" << ifThenElseFailure
+                 << "), skipping mutation: " << mutation.mutationIdentifier << "\n";
     return;
   }
 
