@@ -5,9 +5,11 @@
 #include "mull/Filters/CoverageFilter.h"
 #include "mull/Filters/FilePathFilter.h"
 #include "mull/Filters/GitDiffFilter.h"
+#include "mull/Filters/LineRangeFilter.h"
 #include "mull/Filters/NoDebugInfoFilter.h"
 #include "mull/Filters/SliceFilter.h"
 #include "mull/Filters/VariadicFunctionFilter.h"
+#include <limits>
 #include <llvm/Support/FileSystem.h>
 #include <sstream>
 
@@ -126,6 +128,62 @@ void Filters::enableVariadicFunctionFilter() {
   auto filter = new mull::VariadicFunctionFilter;
   storage.emplace_back(filter);
   functionFilters.push_back(filter);
+}
+
+void Filters::enableLineRangeFilter() {
+  if (configuration.lineRanges.empty()) {
+    if (configuration.debug.filters) {
+      diagnostics.debug("LineRange: no 'lineRanges' key in the configuration, line ranges are "
+                        "disabled");
+    }
+    return;
+  }
+
+  /// Validated up front rather than per point: a degenerate range would
+  /// otherwise just silently keep nothing, which looks exactly like a file with
+  /// no mutants in it.
+  bool usable = false;
+  for (const LineRangeConfig &range : configuration.lineRanges) {
+    std::string error;
+    llvm::Regex regex(range.file);
+    if (!regex.isValid(error)) {
+      diagnostics.error("lineRanges: invalid 'file' regex '"s + range.file + "': " + error);
+      continue;
+    }
+    if (range.from == 0) {
+      diagnostics.error("lineRanges: 'from' must be at least 1, line numbers are 1-based. "
+                        "Omit 'to' to run to the end of the file.");
+      continue;
+    }
+    if (range.from > range.to) {
+      std::stringstream errorMessage;
+      errorMessage << "lineRanges: 'from' (" << range.from << ") must not be greater than 'to' ("
+                   << range.to << ") for file regex '" << range.file << "'";
+      diagnostics.error(errorMessage.str());
+      continue;
+    }
+
+    std::stringstream infoMessage;
+    infoMessage << "Line range enabled: keeping mutants in lines " << range.from << "..";
+    if (range.to == std::numeric_limits<unsigned>::max()) {
+      infoMessage << "end of file";
+    } else {
+      infoMessage << range.to;
+    }
+    infoMessage << " of files matching '" << range.file << "'";
+    diagnostics.info(infoMessage.str());
+    usable = true;
+  }
+
+  if (!usable) {
+    diagnostics.error("lineRanges: no usable range in the configuration, so every mutant would be "
+                      "filtered out. Remove the 'lineRanges' key entirely to disable it.");
+    return;
+  }
+
+  auto *filter = new mull::LineRangeFilter(configuration.lineRanges);
+  storage.emplace_back(filter);
+  mutationFilters.push_back(filter);
 }
 
 void Filters::enableSliceFilter() {

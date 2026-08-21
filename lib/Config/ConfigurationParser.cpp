@@ -34,6 +34,17 @@ template <> struct llvm::yaml::MappingTraits<SliceConfig> {
   }
 };
 
+LLVM_YAML_IS_SEQUENCE_VECTOR(LineRangeConfig)
+
+template <> struct llvm::yaml::MappingTraits<LineRangeConfig> {
+  static void mapping(llvm::yaml::IO &io, LineRangeConfig &config) {
+    io.mapOptional("file", config.file);
+    io.mapOptional("from", config.from);
+    /// Left at its default -- the end of the file -- when omitted.
+    io.mapOptional("to", config.to);
+  }
+};
+
 LLVM_YAML_IS_SEQUENCE_VECTOR(RegionBoundaryConfig)
 
 template <> struct llvm::yaml::MappingTraits<RegionBoundaryConfig> {
@@ -91,6 +102,7 @@ template <> struct llvm::yaml::MappingTraits<Configuration> {
     io.mapOptional("includePaths", config.includePaths);
     io.mapOptional("excludePaths", config.excludePaths);
     io.mapOptional("slice", config.slice);
+    io.mapOptional("lineRanges", config.lineRanges);
     io.mapOptional("dumpMutantsTo", config.dumpMutantsTo);
     io.mapOptional("dumpOnly", config.dumpOnly);
     io.mapOptional("regions", config.regions);

@@ -73,6 +73,7 @@ set(mull_sources
   Filters/JunkMutationFilter.cpp
   Filters/NoDebugInfoFilter.cpp
   Filters/SliceFilter.cpp
+  Filters/LineRangeFilter.cpp
   Filters/FilePathFilter.cpp
   Filters/GitDiffReader.cpp
   Filters/GitDiffFilter.cpp

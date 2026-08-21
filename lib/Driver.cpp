@@ -84,6 +84,9 @@ void mull::mutateBitcode(llvm::Module &module) {
   /// is a deterministic per-point predicate, so filtering in either order gives
   /// the same result: union_i(slice_i \ junk) == (all \ junk).
   filters.enableSliceFilter();
+  /// Same placement rationale as slicing: an opt-in cost lever, ahead of the
+  /// junk filter so it also skips its share of the AST re-parse.
+  filters.enableLineRangeFilter();
 
   std::string cxxCompilationFlags;
   for (auto &flag : configuration.compilerFlags) {

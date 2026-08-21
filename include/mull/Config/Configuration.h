@@ -44,6 +44,10 @@ struct Configuration {
 
   SliceConfig slice{};
 
+  /// Confine mutation to these line ranges. Empty means the filter is never
+  /// installed. See LineRangeFilter.
+  std::vector<LineRangeConfig> lineRanges;
+
   /// Path *prefix* for the mutant-population dump written after filtering and
   /// before the clone phase. Empty means no dump, which is the default and a
   /// complete no-op. See MutantDump.

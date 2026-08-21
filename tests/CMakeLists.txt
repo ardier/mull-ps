@@ -41,6 +41,7 @@ set(mull_unittests_sources
   JunkDetection/CompilationDatabaseTests.cpp
   MutationFilters/MutationFilterTests.cpp
   MutationFilters/SliceFilterTests.cpp
+  MutationFilters/LineRangeFilterTests.cpp
   MutationFilters/GitDiffReaderTests.cpp
 )
 

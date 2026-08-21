@@ -140,3 +140,30 @@ MULL_CONFIG=$PWD/mull.yml /usr/lib/llvm-14/bin/clang++ \
 Note that this reports **points identified** and, for the kept set, the mutants
 that *would* be generated. Nothing here is compiled into a binary, run, or
 killed.
+
+## Related: confining a run to line ranges
+
+`lineRanges` is the other opt-in cost lever, for files whose clone phase cannot
+finish at all. It keeps only the mutation points whose source line falls inside
+one of the configured ranges:
+
+```yaml
+lineRanges:
+  - file: ".*halide_blur\\.halide_generated\\.cpp"   # regex over the point's file path
+    from: 3447                                       # 1-based, inclusive
+    to: 4204                                         # 1-based, inclusive; omit for end of file
+```
+
+Multiple entries are a union: a point is kept if it is inside *any* of them, and
+they may overlap. A file matching no entry keeps nothing, so pointing one range
+at one file confines the whole run to that part of that file. `from: 0`, `from`
+greater than `to`, and an unusable regex are reported as errors rather than
+quietly keeping nothing.
+
+Absent key means the filter is never installed. It composes with `slice:` --
+running every slice index of a line-range-confined population reproduces that
+population exactly.
+
+This is a cost lever, **not** the way to scope what gets tested: a point that is
+never generated cannot be recovered later, which is why region *tagging* exists
+above. Reach for `lineRanges` only when a file is otherwise unrunnable.

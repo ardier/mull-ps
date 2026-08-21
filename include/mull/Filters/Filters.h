@@ -31,6 +31,7 @@ public:
   void enableBlockAddressFilter();
   void enableVariadicFunctionFilter();
   void enableSliceFilter();
+  void enableLineRangeFilter();
   CoverageFilter *enableCoverageFilter(const std::string &profileName,
                                        const std::vector<std::string> &objects);
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -25,6 +26,19 @@ struct SliceConfig {
   unsigned index = 0;
   unsigned count = 0;
   bool specified = false;
+};
+
+/// One line range to confine mutation to. `file` is a regex matched against the
+/// mutation point's source file path; `from` and `to` are 1-based and
+/// inclusive. `to` defaults to "the end of the file", so it may be omitted.
+///
+/// Off by default and meant as a cost lever for files whose clone phase cannot
+/// finish at all -- not as a way of scoping what gets tested, since a point
+/// that is never generated cannot be recovered afterwards.
+struct LineRangeConfig {
+  std::string file;
+  unsigned from = 0;
+  unsigned to = std::numeric_limits<unsigned>::max();
 };
 
 /// One explicit boilerplate/generator boundary, for a set of files matched by
