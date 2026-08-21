@@ -6,7 +6,7 @@ load("//:bazel/os_detection.bzl", "is_macos", "is_redhat")
 def _llvm_path(repository_ctx, version):
     if is_macos(repository_ctx):
         return "/opt/homebrew/opt/llvm@" + version
-    return "/usr/lib/llvm-" + version
+    return repository_ctx.os.environ.get("MULL_LLVM_PREFIX_DIR", "/usr/lib") + "/llvm-" + version
 
 def _is_supported(repository_ctx, version):
     if is_redhat(repository_ctx):

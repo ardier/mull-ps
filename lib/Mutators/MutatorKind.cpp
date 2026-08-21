@@ -194,6 +194,11 @@ std::string MutationKindToString(MutatorKind mutatorKind) {
   case MutatorKind::Halide_ReplaceStoreAtToComputeAtCall: {
     return "Halide: StoreAt to ComputeAt";
   }
+#define HALIDE_GEN_MUTATOR(KindName, ClassName, IdString, IrmClass, Description)                   \
+  case MutatorKind::KindName: {                                                                    \
+    return Description;                                                                            \
+  }
+#include "mull/Mutators/CXX/HalideGeneratedMutators.def"
   }
 }
 

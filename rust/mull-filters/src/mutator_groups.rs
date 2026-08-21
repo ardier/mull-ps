@@ -32,9 +32,10 @@ pub fn get_group_definitions() -> Vec<(String, String)> {
         ("cxx_boundary", "cxx_le_to_lt, cxx_lt_to_le, cxx_ge_to_gt, cxx_gt_to_ge"),
         ("cxx_calls", "cxx_remove_void_call, cxx_replace_scalar_call"),
         ("experimental", "negate_mutator, cxx_logical"),
-        ("halide_mutator", "halide_arithmetic, halide_schedule"),
+        ("halide_mutator", "halide_arithmetic, halide_schedule, halide_generated"),
         ("halide_arithmetic", "Halide_add_to_mul, Halide_add_to_sub, Halide_add_to_div, Halide_sub_to_mul, Halide_sub_to_add, Halide_sub_to_div, Halide_mul_to_add, Halide_mul_to_sub, Halide_mul_to_div, Halide_div_to_mul, Halide_div_to_sub, Halide_div_to_add"),
         ("halide_schedule", "Halide_vectorize_to_unroll, Halide_vectorize_to_parallel, Halide_unroll_to_vectorize, Halide_unroll_to_parallel, Halide_parallel_to_vectorize, Halide_parallel_to_unroll, Halide_compute_at_to_store_at, Halide_store_at_to_compute_at"),
+        ("halide_generated", "Halide_lt_to_ge, Halide_lt_to_le, Halide_le_to_gt, Halide_le_to_lt, Halide_gt_to_ge, Halide_gt_to_le, Halide_ge_to_gt, Halide_ge_to_lt, Halide_eq_to_ne, Halide_ne_to_eq, Halide_logical_and_to_or, Halide_logical_or_to_and, Halide_and_to_or, Halide_or_to_and, Halide_xor_to_or, Halide_lshift_to_rshift, Halide_rshift_to_lshift, Halide_rem_to_div, Halide_add_assign_to_sub_assign, Halide_sub_assign_to_add_assign, Halide_mul_assign_to_div_assign, Halide_div_assign_to_mul_assign, Halide_not_to_negate, Halide_not_to_bitwise_not, Halide_negate_to_not, Halide_negate_to_bitwise_not, Halide_bitwise_not_to_not, Halide_bitwise_not_to_negate, Halide_min_to_max, Halide_max_to_min"),
     ];
 
     groups.sort_by(|a, b| a.0.cmp(b.0));
@@ -147,6 +148,41 @@ fn expand_group(group: &str, result: &mut HashSet<String>) {
         "halide_mutator" => {
             expand_group("halide_arithmetic", result);
             expand_group("halide_schedule", result);
+                    expand_group("halide_generated", result);
+        }
+        // Census-driven expansion: one operator per Mull C++ mutator for which
+        // Halide::Expr was empirically confirmed to overload the operator.
+        "halide_generated" => {
+            result.insert("Halide_lt_to_ge".to_string());
+            result.insert("Halide_lt_to_le".to_string());
+            result.insert("Halide_le_to_gt".to_string());
+            result.insert("Halide_le_to_lt".to_string());
+            result.insert("Halide_gt_to_ge".to_string());
+            result.insert("Halide_gt_to_le".to_string());
+            result.insert("Halide_ge_to_gt".to_string());
+            result.insert("Halide_ge_to_lt".to_string());
+            result.insert("Halide_eq_to_ne".to_string());
+            result.insert("Halide_ne_to_eq".to_string());
+            result.insert("Halide_logical_and_to_or".to_string());
+            result.insert("Halide_logical_or_to_and".to_string());
+            result.insert("Halide_and_to_or".to_string());
+            result.insert("Halide_or_to_and".to_string());
+            result.insert("Halide_xor_to_or".to_string());
+            result.insert("Halide_lshift_to_rshift".to_string());
+            result.insert("Halide_rshift_to_lshift".to_string());
+            result.insert("Halide_rem_to_div".to_string());
+            result.insert("Halide_add_assign_to_sub_assign".to_string());
+            result.insert("Halide_sub_assign_to_add_assign".to_string());
+            result.insert("Halide_mul_assign_to_div_assign".to_string());
+            result.insert("Halide_div_assign_to_mul_assign".to_string());
+            result.insert("Halide_not_to_negate".to_string());
+            result.insert("Halide_not_to_bitwise_not".to_string());
+            result.insert("Halide_negate_to_not".to_string());
+            result.insert("Halide_negate_to_bitwise_not".to_string());
+            result.insert("Halide_bitwise_not_to_not".to_string());
+            result.insert("Halide_bitwise_not_to_negate".to_string());
+            result.insert("Halide_min_to_max".to_string());
+            result.insert("Halide_max_to_min".to_string());
         }
         "halide_arithmetic" => {
             result.insert("Halide_add_to_mul".to_string());

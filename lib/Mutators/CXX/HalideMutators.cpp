@@ -334,3 +334,20 @@ ReplaceHalideStoreAtToComputeAtCall::ReplaceHalideStoreAtToComputeAtCall()
     : TrivialCXXMutator(getReplaceHalideStoreAtToComputeAtCall(), MutatorKind::Halide_ReplaceStoreAtToComputeAtCall, ReplaceHalideStoreAtToComputeAtCall::ID(),
                         "Replaces a halide store_at with compute_at", "*",
                         "Replaced a halide store_at with compute_at") {}
+
+/// Generated swap operators. Each expands to the same shape as the hand-written
+/// mutators above: a factory returning the irm mutation, an ID, and a
+/// TrivialCXXMutator constructor.
+#define HALIDE_GEN_MUTATOR(KindName, ClassName, IdString, IrmClass, Description)                   \
+  static std::vector<std::unique_ptr<irm::IRMutation>> get##ClassName() {                          \
+    std::vector<std::unique_ptr<irm::IRMutation>> mutators;                                        \
+    mutators.push_back(std::make_unique<irm::IrmClass>());                                         \
+    return mutators;                                                                               \
+  }                                                                                                \
+  std::string ClassName::ID() {                                                                    \
+    return IdString;                                                                               \
+  }                                                                                                \
+  ClassName::ClassName()                                                                           \
+      : TrivialCXXMutator(get##ClassName(), MutatorKind::KindName, ClassName::ID(), Description,    \
+                          "*", Description) {}
+#include "mull/Mutators/CXX/HalideGeneratedMutators.def"

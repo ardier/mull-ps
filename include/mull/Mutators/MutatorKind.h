@@ -97,6 +97,11 @@ enum class MutatorKind {
   Halide_ReplaceParallelToUnrollCall,
   Halide_ReplaceComputeAtToStoreAtCall,
   Halide_ReplaceStoreAtToComputeAtCall,
+
+  /// Generated IR-route swaps: relational, logical, bitwise, remainder,
+  /// compound-assignment, unary and min/max. See HalideGeneratedMutators.def.
+#define HALIDE_GEN_MUTATOR(KindName, ClassName, IdString, IrmClass, Description) KindName,
+#include "mull/Mutators/CXX/HalideGeneratedMutators.def"
 };
 
 std::string MutationKindToString(MutatorKind mutatorKind);

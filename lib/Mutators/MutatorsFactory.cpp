@@ -102,6 +102,10 @@ void MutatorsFactory::init() {
   addMutator<cxx::ReplaceHalideParallelToUnrollCall>(mutatorsMapping);
   addMutator<cxx::ReplaceHalideComputeAtToStoreAtCall>(mutatorsMapping);
   addMutator<cxx::ReplaceHalideStoreAtToComputeAtCall>(mutatorsMapping);
+
+#define HALIDE_GEN_MUTATOR(KindName, ClassName, IdString, IrmClass, Description)                   \
+  addMutator<cxx::ClassName>(mutatorsMapping);
+#include "mull/Mutators/CXX/HalideGeneratedMutators.def"
 }
 
 Mutator *MutatorsFactory::getMutator(const string &mutatorId) {
