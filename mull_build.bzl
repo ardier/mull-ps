@@ -7,7 +7,7 @@ def mull_build(name):
         cc_library(
             name = "libmull_%s" % llvm_version,
             srcs = native.glob(["lib/**/*.cpp"]),
-            hdrs = native.glob(["include/**/*.h"]),
+            hdrs = native.glob(["include/**/*.h", "include/**/*.def"]),
             includes = ["include"],
             deps = [
                 "@mull_irm_%s//:irm" % llvm_version,

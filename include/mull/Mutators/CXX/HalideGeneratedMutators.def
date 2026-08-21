@@ -1,0 +1,84 @@
+// NO include guard and NO #pragma once: this file is an X-macro list and is
+// deliberately included once per registration site, each time with a different
+// definition of HALIDE_GEN_MUTATOR. An include guard would silently drop every
+// expansion after the first.
+// X-macro list of the generated Halide IR-route mutation operators.
+//
+// One line per operator, expanded at every registration site: the MutatorKind
+// enum, its description table, the mutator class declarations and definitions,
+// the MutatorsFactory group and registry, and the junk detector's dispatch.
+// Adding an operator previously meant six coordinated edits; with ~30 of them
+// that is not maintainable by hand.
+//
+// The mangled-name mappings these wrap live in libirm's HalideOperators.def and
+// are generated from libHalide's symbol table. Regenerate both with
+// scripts/gen_halide_operators.py.
+//
+// HALIDE_GEN_MUTATOR(KindName, ClassName, IdString, IrmClass, Description)
+
+#ifndef HALIDE_GEN_MUTATOR
+#define HALIDE_GEN_MUTATOR(KindName, ClassName, IdString, IrmClass, Description)
+#endif
+
+HALIDE_GEN_MUTATOR(Halide_LtToGe, ReplaceHalideLtToGeCall, "Halide_lt_to_ge", Halide_lt_to_ge,
+                   "Halide: < to >=")
+HALIDE_GEN_MUTATOR(Halide_LtToLe, ReplaceHalideLtToLeCall, "Halide_lt_to_le", Halide_lt_to_le,
+                   "Halide: < to <=")
+HALIDE_GEN_MUTATOR(Halide_LeToGt, ReplaceHalideLeToGtCall, "Halide_le_to_gt", Halide_le_to_gt,
+                   "Halide: <= to >")
+HALIDE_GEN_MUTATOR(Halide_LeToLt, ReplaceHalideLeToLtCall, "Halide_le_to_lt", Halide_le_to_lt,
+                   "Halide: <= to <")
+HALIDE_GEN_MUTATOR(Halide_GtToGe, ReplaceHalideGtToGeCall, "Halide_gt_to_ge", Halide_gt_to_ge,
+                   "Halide: > to >=")
+HALIDE_GEN_MUTATOR(Halide_GtToLe, ReplaceHalideGtToLeCall, "Halide_gt_to_le", Halide_gt_to_le,
+                   "Halide: > to <=")
+HALIDE_GEN_MUTATOR(Halide_GeToGt, ReplaceHalideGeToGtCall, "Halide_ge_to_gt", Halide_ge_to_gt,
+                   "Halide: >= to >")
+HALIDE_GEN_MUTATOR(Halide_GeToLt, ReplaceHalideGeToLtCall, "Halide_ge_to_lt", Halide_ge_to_lt,
+                   "Halide: >= to <")
+HALIDE_GEN_MUTATOR(Halide_EqToNe, ReplaceHalideEqToNeCall, "Halide_eq_to_ne", Halide_eq_to_ne,
+                   "Halide: == to !=")
+HALIDE_GEN_MUTATOR(Halide_NeToEq, ReplaceHalideNeToEqCall, "Halide_ne_to_eq", Halide_ne_to_eq,
+                   "Halide: != to ==")
+HALIDE_GEN_MUTATOR(Halide_LogicalAndToOr, ReplaceHalideLogicalAndToOrCall, "Halide_logical_and_to_or", Halide_logical_and_to_or,
+                   "Halide: && to ||")
+HALIDE_GEN_MUTATOR(Halide_LogicalOrToAnd, ReplaceHalideLogicalOrToAndCall, "Halide_logical_or_to_and", Halide_logical_or_to_and,
+                   "Halide: || to &&")
+HALIDE_GEN_MUTATOR(Halide_AndToOr, ReplaceHalideAndToOrCall, "Halide_and_to_or", Halide_and_to_or,
+                   "Halide: & to |")
+HALIDE_GEN_MUTATOR(Halide_OrToAnd, ReplaceHalideOrToAndCall, "Halide_or_to_and", Halide_or_to_and,
+                   "Halide: | to &")
+HALIDE_GEN_MUTATOR(Halide_XorToOr, ReplaceHalideXorToOrCall, "Halide_xor_to_or", Halide_xor_to_or,
+                   "Halide: ^ to |")
+HALIDE_GEN_MUTATOR(Halide_LshiftToRshift, ReplaceHalideLshiftToRshiftCall, "Halide_lshift_to_rshift", Halide_lshift_to_rshift,
+                   "Halide: << to >>")
+HALIDE_GEN_MUTATOR(Halide_RshiftToLshift, ReplaceHalideRshiftToLshiftCall, "Halide_rshift_to_lshift", Halide_rshift_to_lshift,
+                   "Halide: >> to <<")
+HALIDE_GEN_MUTATOR(Halide_RemToDiv, ReplaceHalideRemToDivCall, "Halide_rem_to_div", Halide_rem_to_div,
+                   "Halide: % to /")
+HALIDE_GEN_MUTATOR(Halide_AddAssignToSubAssign, ReplaceHalideAddAssignToSubAssignCall, "Halide_add_assign_to_sub_assign", Halide_add_assign_to_sub_assign,
+                   "Halide: += to -=")
+HALIDE_GEN_MUTATOR(Halide_SubAssignToAddAssign, ReplaceHalideSubAssignToAddAssignCall, "Halide_sub_assign_to_add_assign", Halide_sub_assign_to_add_assign,
+                   "Halide: -= to +=")
+HALIDE_GEN_MUTATOR(Halide_MulAssignToDivAssign, ReplaceHalideMulAssignToDivAssignCall, "Halide_mul_assign_to_div_assign", Halide_mul_assign_to_div_assign,
+                   "Halide: *= to /=")
+HALIDE_GEN_MUTATOR(Halide_DivAssignToMulAssign, ReplaceHalideDivAssignToMulAssignCall, "Halide_div_assign_to_mul_assign", Halide_div_assign_to_mul_assign,
+                   "Halide: /= to *=")
+HALIDE_GEN_MUTATOR(Halide_NotToNegate, ReplaceHalideNotToNegateCall, "Halide_not_to_negate", Halide_not_to_negate,
+                   "Halide: ! to unary -")
+HALIDE_GEN_MUTATOR(Halide_NotToBitwiseNot, ReplaceHalideNotToBitwiseNotCall, "Halide_not_to_bitwise_not", Halide_not_to_bitwise_not,
+                   "Halide: ! to ~")
+HALIDE_GEN_MUTATOR(Halide_NegateToNot, ReplaceHalideNegateToNotCall, "Halide_negate_to_not", Halide_negate_to_not,
+                   "Halide: unary - to !")
+HALIDE_GEN_MUTATOR(Halide_NegateToBitwiseNot, ReplaceHalideNegateToBitwiseNotCall, "Halide_negate_to_bitwise_not", Halide_negate_to_bitwise_not,
+                   "Halide: unary - to ~")
+HALIDE_GEN_MUTATOR(Halide_BitwiseNotToNot, ReplaceHalideBitwiseNotToNotCall, "Halide_bitwise_not_to_not", Halide_bitwise_not_to_not,
+                   "Halide: ~ to !")
+HALIDE_GEN_MUTATOR(Halide_BitwiseNotToNegate, ReplaceHalideBitwiseNotToNegateCall, "Halide_bitwise_not_to_negate", Halide_bitwise_not_to_negate,
+                   "Halide: ~ to unary -")
+HALIDE_GEN_MUTATOR(Halide_MinToMax, ReplaceHalideMinToMaxCall, "Halide_min_to_max", Halide_min_to_max,
+                   "Halide: min to max")
+HALIDE_GEN_MUTATOR(Halide_MaxToMin, ReplaceHalideMaxToMinCall, "Halide_max_to_min", Halide_max_to_min,
+                   "Halide: max to min")
+
+#undef HALIDE_GEN_MUTATOR

@@ -98,6 +98,10 @@ enum class MutatorKind {
   Halide_ReplaceComputeAtToStoreAtCall,
   Halide_ReplaceStoreAtToComputeAtCall,
 
+  /// Generated IR-route swaps: relational, logical, bitwise, remainder,
+  /// compound-assignment, unary and min/max. See HalideGeneratedMutators.def.
+#define HALIDE_GEN_MUTATOR(KindName, ClassName, IdString, IrmClass, Description) KindName,
+#include "mull/Mutators/CXX/HalideGeneratedMutators.def"
   /// Halide::BoundaryConditions family swap. Unlike the block above, these are
   /// produced by the Clang AST route (mull-cxx-frontend), not by matching a
   /// mangled callee name: the idiomatic entry points are function templates

@@ -143,6 +143,10 @@ mull_supported_llvm_versions.configure(
             "13",
             "14",
             "15",
+            # apt.llvm.org publishes LLVM 20 for jammy even though Ubuntu's own
+            # archive does not; point MULL_LLVM_PREFIX_DIR at it when it is
+            # unpacked into a prefix rather than installed under /usr/lib.
+            "20",
         ],
         "ubuntu:24.04": [
             "14",

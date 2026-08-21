@@ -104,6 +104,9 @@ void MutatorsFactory::init() {
   addMutator<cxx::ReplaceHalideComputeAtToStoreAtCall>(mutatorsMapping);
   addMutator<cxx::ReplaceHalideStoreAtToComputeAtCall>(mutatorsMapping);
 
+#define HALIDE_GEN_MUTATOR(KindName, ClassName, IdString, IrmClass, Description)                   \
+  addMutator<cxx::ClassName>(mutatorsMapping);
+#include "mull/Mutators/CXX/HalideGeneratedMutators.def"
   /// Halide::BoundaryConditions family swap (AST route, group
   /// halide_boundary_conditions). Same isolation rule as above: not in
   /// cxx_all / cxx_default.

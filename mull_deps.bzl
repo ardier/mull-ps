@@ -14,7 +14,8 @@ cc_library(
     ]),
     hdrs = glob([
         "include/**/*.h",
-    ]),
+        "include/**/*.def",
+    ], allow_empty = True),
     includes = ["include"],
     visibility = ["//visibility:public"],
     deps = [
@@ -155,7 +156,7 @@ def _mull_deps_extension(module_ctx):
                     path = "/usr"
                     libdir = "lib64"
                 else:
-                    path = "/usr/lib/llvm-" + version
+                    path = module_ctx.os.environ.get("MULL_LLVM_PREFIX_DIR", "/usr/lib") + "/llvm-" + version
                 llvm_dylib = _find_llvm_dylib(module_ctx, path, libdir, version)
                 clang_dylib = _find_clang_dylib(module_ctx, path, libdir, version)
                 new_local_repository(

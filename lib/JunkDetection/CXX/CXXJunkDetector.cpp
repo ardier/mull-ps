@@ -55,6 +55,9 @@ static const clang::Stmt *findMutantExpression(MutationPoint *point,
   case MutatorKind::Halide_ReplaceParallelToVectorizeCall:
   case MutatorKind::Halide_ReplaceParallelToUnrollCall:
   case MutatorKind::Halide_ReplaceComputeAtToStoreAtCall:
+#define HALIDE_GEN_MUTATOR(KindName, ClassName, IdString, IrmClass, Description)                   \
+  case MutatorKind::KindName:
+#include "mull/Mutators/CXX/HalideGeneratedMutators.def"
   case MutatorKind::Halide_ReplaceStoreAtToComputeAtCall: {
     ReplaceHalideCallVisitor visitor(visitorParameters);
     visitor.TraverseDecl(decl);
