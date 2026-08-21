@@ -44,6 +44,15 @@ struct Configuration {
 
   SliceConfig slice{};
 
+  /// Path *prefix* for the mutant-population dump written after filtering and
+  /// before the clone phase. Empty means no dump, which is the default and a
+  /// complete no-op. See MutantDump.
+  std::string dumpMutantsTo;
+
+  /// Stop after writing the dump, leaving the module unmutated. Only has an
+  /// effect together with `dumpMutantsTo`.
+  bool dumpOnly;
+
   DebugConfig debug{};
 
   Configuration();

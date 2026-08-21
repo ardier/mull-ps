@@ -9,6 +9,7 @@
 #include "mull/FunctionUnderTest.h"
 #include "mull/JunkDetection/CXX/ASTStorage.h"
 #include "mull/JunkDetection/CXX/CXXJunkDetector.h"
+#include "mull/MutantDump.h"
 #include "mull/MutationsFinder.h"
 #include "mull/Mutators/MutatorsFactory.h"
 #include "mull/Parallelization/Parallelization.h"
@@ -19,6 +20,7 @@
 #include <llvm/Support/FileSystem.h>
 
 #include <algorithm>
+#include <memory>
 #include <sstream>
 #include <unordered_map>
 #include <vector>
@@ -184,6 +186,18 @@ void mull::mutateBitcode(llvm::Module &module) {
       mutationsFinder.getMutationPoints(diagnostics, filteredFunctions);
   std::vector<MutationPoint *> mutations = std::move(mutationPoints);
 
+  /// The population is fully known once filtering is done, and filtering is
+  /// cheap relative to the clone phase that follows. Recording it here is
+  /// therefore the only place a file that cannot finish instrumenting can
+  /// still report its mutants. Absent `dumpMutantsTo`, nothing below runs.
+  std::unique_ptr<MutantDump> mutantDump;
+  if (!configuration.dumpMutantsTo.empty()) {
+    mutantDump = std::make_unique<MutantDump>(diagnostics, configuration.dumpMutantsTo);
+  } else if (configuration.dumpOnly) {
+    diagnostics.warning("dumpOnly is set but dumpMutantsTo is empty, so there is nothing to "
+                        "dump; continuing with the normal mutation pipeline.");
+  }
+
   for (auto filter : filters.mutationFilters) {
     std::vector<MutationFilterTask> tasks;
     tasks.reserve(configuration.parallelization.workers);
@@ -196,7 +210,20 @@ void mull::mutateBitcode(llvm::Module &module) {
     TaskExecutor<MutationFilterTask> filterRunner(
         diagnostics, label, mutations, tmp, std::move(tasks));
     filterRunner.execute();
+    if (mutantDump) {
+      mutantDump->recordFilterStage(mutations, tmp, filter->name());
+    }
     mutations = std::move(tmp);
+  }
+
+  if (mutantDump) {
+    singleTask.execute("Dumping mutant population", [&]() { mutantDump->write(mutations); });
+    if (configuration.dumpOnly) {
+      diagnostics.info("dumpOnly is set: stopping before the clone phase. The module is left "
+                       "unmutated, so the object file this compilation produces is a normal, "
+                       "uninstrumented one.");
+      return;
+    }
   }
 
   singleTask.execute("Prepare mutations", [&]() {

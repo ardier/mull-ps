@@ -68,6 +68,8 @@ template <> struct llvm::yaml::MappingTraits<Configuration> {
     io.mapOptional("includePaths", config.includePaths);
     io.mapOptional("excludePaths", config.excludePaths);
     io.mapOptional("slice", config.slice);
+    io.mapOptional("dumpMutantsTo", config.dumpMutantsTo);
+    io.mapOptional("dumpOnly", config.dumpOnly);
     io.mapOptional("debug", config.debug);
   }
 };

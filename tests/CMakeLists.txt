@@ -18,6 +18,7 @@ set(mull_unittests_sources
   Mutations-E2E/Scalar/01_Mutation_Scalar_ReturnValue_Test.cpp
   Mutations-E2E/Scalar/02_Mutation_Scalar_BinaryOperand_Test.cpp
 
+  MutantDumpTests.cpp
   MutationPointTests.cpp
   MutatorsFactoryTests.cpp
 

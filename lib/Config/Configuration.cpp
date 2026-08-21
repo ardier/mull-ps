@@ -9,6 +9,6 @@ Configuration::Configuration()
       captureTestOutput(true), captureMutantOutput(true), includeNotCovered(false),
       junkDetectionDisabled(false), timeout(MullDefaultTimeoutMilliseconds),
       diagnostics(IDEDiagnosticsKind::None),
-      parallelization(ParallelizationConfig::defaultConfig()) {}
+      parallelization(ParallelizationConfig::defaultConfig()), dumpMutantsTo(), dumpOnly(false) {}
 
 } // namespace mull
