@@ -32,9 +32,10 @@ pub fn get_group_definitions() -> Vec<(String, String)> {
         ("cxx_boundary", "cxx_le_to_lt, cxx_lt_to_le, cxx_ge_to_gt, cxx_gt_to_ge"),
         ("cxx_calls", "cxx_remove_void_call, cxx_replace_scalar_call"),
         ("experimental", "negate_mutator, cxx_logical"),
-        ("halide_mutator", "halide_arithmetic, halide_schedule"),
+        ("halide_mutator", "halide_arithmetic, halide_schedule, halide_boundary_conditions"),
         ("halide_arithmetic", "Halide_add_to_mul, Halide_add_to_sub, Halide_add_to_div, Halide_sub_to_mul, Halide_sub_to_add, Halide_sub_to_div, Halide_mul_to_add, Halide_mul_to_sub, Halide_mul_to_div, Halide_div_to_mul, Halide_div_to_sub, Halide_div_to_add"),
         ("halide_schedule", "Halide_vectorize_to_unroll, Halide_vectorize_to_parallel, Halide_unroll_to_vectorize, Halide_unroll_to_parallel, Halide_parallel_to_vectorize, Halide_parallel_to_unroll, Halide_compute_at_to_store_at, Halide_store_at_to_compute_at"),
+        ("halide_boundary_conditions", "Halide_repeat_edge_to_repeat_image, Halide_repeat_edge_to_mirror_image, Halide_repeat_edge_to_mirror_interior, Halide_repeat_image_to_repeat_edge, Halide_repeat_image_to_mirror_image, Halide_repeat_image_to_mirror_interior, Halide_mirror_image_to_repeat_edge, Halide_mirror_image_to_repeat_image, Halide_mirror_image_to_mirror_interior, Halide_mirror_interior_to_repeat_edge, Halide_mirror_interior_to_repeat_image, Halide_mirror_interior_to_mirror_image"),
     ];
 
     groups.sort_by(|a, b| a.0.cmp(b.0));
@@ -147,6 +148,7 @@ fn expand_group(group: &str, result: &mut HashSet<String>) {
         "halide_mutator" => {
             expand_group("halide_arithmetic", result);
             expand_group("halide_schedule", result);
+            expand_group("halide_boundary_conditions", result);
         }
         "halide_arithmetic" => {
             result.insert("Halide_add_to_mul".to_string());
@@ -171,6 +173,22 @@ fn expand_group(group: &str, result: &mut HashSet<String>) {
             result.insert("Halide_parallel_to_unroll".to_string());
             result.insert("Halide_compute_at_to_store_at".to_string());
             result.insert("Halide_store_at_to_compute_at".to_string());
+        }
+        // Swaps which member of Halide::BoundaryConditions a call site uses.
+        // Applied on the Clang AST by mull-cxx-frontend, not on IR.
+        "halide_boundary_conditions" => {
+            result.insert("Halide_repeat_edge_to_repeat_image".to_string());
+            result.insert("Halide_repeat_edge_to_mirror_image".to_string());
+            result.insert("Halide_repeat_edge_to_mirror_interior".to_string());
+            result.insert("Halide_repeat_image_to_repeat_edge".to_string());
+            result.insert("Halide_repeat_image_to_mirror_image".to_string());
+            result.insert("Halide_repeat_image_to_mirror_interior".to_string());
+            result.insert("Halide_mirror_image_to_repeat_edge".to_string());
+            result.insert("Halide_mirror_image_to_repeat_image".to_string());
+            result.insert("Halide_mirror_image_to_mirror_interior".to_string());
+            result.insert("Halide_mirror_interior_to_repeat_edge".to_string());
+            result.insert("Halide_mirror_interior_to_repeat_image".to_string());
+            result.insert("Halide_mirror_interior_to_mirror_image".to_string());
         }
 
         // Not a group, treat as individual mutator ID

@@ -95,6 +95,32 @@ public:
   }
 };
 
+/// Swaps which function a call expression calls, keeping the argument list
+/// untouched: `f(a, b)` becomes `g(a, b)`.
+///
+/// Used for the Halide::BoundaryConditions family, whose members
+/// (repeat_edge / repeat_image / mirror_image / mirror_interior) share an
+/// overload set, so the swap is always well-typed. The replacement callee is
+/// held by name rather than by FunctionDecl: the idiomatic entry points are
+/// function templates, so the target has to be re-resolved through Sema
+/// against the actual argument types at mutation time.
+class HalideCalleeSwapMutation : public ASTMutation {
+public:
+  clang::CallExpr *callExpr;
+  /// Unqualified name of the replacement callee, looked up in the same
+  /// DeclContext as the original callee.
+  std::string replacementCalleeName;
+
+  HalideCalleeSwapMutation(clang::CallExpr *callExpr, std::string replacementCalleeName)
+      : ASTMutation(replacementCalleeName), callExpr(callExpr),
+        replacementCalleeName(std::move(replacementCalleeName)) {}
+
+  void performMutation(ASTMutationPoint &mutation, ASTMutator &mutator) {
+    mutator.performHalideCalleeSwapMutation(mutation, *this);
+  }
+  ~HalideCalleeSwapMutation() {}
+};
+
 class ReplaceNumericInitAssignmentMutation : public ASTMutation {
 
 public:

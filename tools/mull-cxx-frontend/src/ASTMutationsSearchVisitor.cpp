@@ -164,7 +164,96 @@ bool ASTMutationsSearchVisitor::VisitCallExpr(clang::CallExpr *callExpr) {
                         true);
   }
 
+  visitHalideBoundaryConditionsCall(callExpr);
+
   return true;
+}
+
+/// The Halide::BoundaryConditions members that share an overload set and can
+/// therefore be swapped for one another at a call site. constant_exterior is
+/// excluded on purpose: it takes an additional value argument.
+static const struct {
+  const char *source;
+  const char *target;
+  mull::MutatorKind mutatorKind;
+} HalideBoundaryConditionSwaps[] = {
+  { "repeat_edge", "repeat_image", mull::MutatorKind::Halide_BC_RepeatEdgeToRepeatImage },
+  { "repeat_edge", "mirror_image", mull::MutatorKind::Halide_BC_RepeatEdgeToMirrorImage },
+  { "repeat_edge", "mirror_interior", mull::MutatorKind::Halide_BC_RepeatEdgeToMirrorInterior },
+  { "repeat_image", "repeat_edge", mull::MutatorKind::Halide_BC_RepeatImageToRepeatEdge },
+  { "repeat_image", "mirror_image", mull::MutatorKind::Halide_BC_RepeatImageToMirrorImage },
+  { "repeat_image", "mirror_interior", mull::MutatorKind::Halide_BC_RepeatImageToMirrorInterior },
+  { "mirror_image", "repeat_edge", mull::MutatorKind::Halide_BC_MirrorImageToRepeatEdge },
+  { "mirror_image", "repeat_image", mull::MutatorKind::Halide_BC_MirrorImageToRepeatImage },
+  { "mirror_image", "mirror_interior", mull::MutatorKind::Halide_BC_MirrorImageToMirrorInterior },
+  { "mirror_interior", "repeat_edge", mull::MutatorKind::Halide_BC_MirrorInteriorToRepeatEdge },
+  { "mirror_interior", "repeat_image", mull::MutatorKind::Halide_BC_MirrorInteriorToRepeatImage },
+  { "mirror_interior", "mirror_image", mull::MutatorKind::Halide_BC_MirrorInteriorToMirrorImage },
+};
+
+/// True when `declContext` is exactly the namespace Halide::BoundaryConditions.
+/// Checking the namespace chain rather than a printed qualified name keeps
+/// Halide::BoundaryConditions::Internal and any same-named user namespace out.
+static bool isHalideBoundaryConditionsNamespace(const clang::DeclContext *declContext) {
+  const auto *boundaryConditions = clang::dyn_cast_or_null<clang::NamespaceDecl>(declContext);
+  if (boundaryConditions == nullptr || boundaryConditions->getName() != "BoundaryConditions") {
+    return false;
+  }
+  const auto *halide =
+      clang::dyn_cast_or_null<clang::NamespaceDecl>(boundaryConditions->getParent());
+  if (halide == nullptr || halide->getName() != "Halide") {
+    return false;
+  }
+  return halide->getParent() != nullptr && halide->getParent()->isTranslationUnit();
+}
+
+void ASTMutationsSearchVisitor::visitHalideBoundaryConditionsCall(clang::CallExpr *callExpr) {
+  /// Only fully resolved calls are mutated. Inside the uninstantiated bodies of
+  /// Halide's own repeat_edge<T>/... templates the inner call is type-dependent
+  /// and has no direct callee, which is precisely what keeps this operator out
+  /// of Halide's headers: every mutation point lands on a real call written in
+  /// the generator's own source.
+  const clang::FunctionDecl *callee = callExpr->getDirectCallee();
+  if (callee == nullptr) {
+    return;
+  }
+  if (!isHalideBoundaryConditionsNamespace(callee->getDeclContext())) {
+    return;
+  }
+  /// Halide's Func-like overloads are thin templates forwarding to the
+  /// Func-taking overload of the same boundary condition. Those forwarding
+  /// calls are Halide's own implementation, not a boundary condition chosen by
+  /// the code under test: mutating one rewrites a header body shared by every
+  /// call site instead of the call site itself. Only calls made from outside
+  /// the namespace are mutated, which is what keeps every mutation point in
+  /// the source that actually picked a boundary condition.
+  if (enclosingFunction != nullptr &&
+      isHalideBoundaryConditionsNamespace(enclosingFunction->getDeclContext())) {
+    return;
+  }
+
+  const std::string calleeName = callee->getDeclName().getAsString();
+  for (const auto &swap : HalideBoundaryConditionSwaps) {
+    if (calleeName != swap.source) {
+      continue;
+    }
+    if (!mutationMap.isValidMutation(swap.mutatorKind)) {
+      continue;
+    }
+    /// Reject the swap up front when the replacement is not even declared, so
+    /// that no mutation point is reported that cannot be carried out.
+    const clang::DeclarationName targetName(&context.Idents.get(swap.target));
+    if (callee->getDeclContext()->lookup(targetName).empty()) {
+      continue;
+    }
+    std::unique_ptr<HalideCalleeSwapMutation> mutator =
+        std::make_unique<HalideCalleeSwapMutation>(callExpr, swap.target);
+    recordMutationPoint(swap.mutatorKind,
+                        std::move(mutator),
+                        callExpr,
+                        ClangCompatibilityStmtGetBeginLoc(*callExpr),
+                        true);
+  }
 }
 
 bool ASTMutationsSearchVisitor::VisitVarDecl(clang::VarDecl *D) {

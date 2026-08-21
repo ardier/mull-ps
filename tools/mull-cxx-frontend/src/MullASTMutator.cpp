@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cstdlib>
 #include <iostream>
 
@@ -5,6 +6,10 @@
 
 #include <clang/AST/ASTContext.h>
 #include <clang/AST/Expr.h>
+#include <clang/Sema/Lookup.h>
+#include <clang/Sema/Sema.h>
+#include <llvm/ADT/SmallVector.h>
+#include <llvm/Support/raw_ostream.h>
 
 namespace mull {
 namespace cxx {
@@ -169,6 +174,67 @@ void MullASTMutator::performReplaceNumericInitAssignmentMutation(
 
   if (!clangAstMutator.replaceExpression(
           oldAssignedExpr, replacementLiteral, mutation.mutationIdentifier)) {
+    return;
+  }
+  instrumentation.addMutantStringDefinition(mutation.mutationBinaryRecord,
+                                            static_cast<int>(mutation.mutationType),
+                                            mutation.beginLine,
+                                            mutation.beginColumn);
+}
+
+clang::Expr *MullASTMutator::buildCalleeSwappedCall(clang::CallExpr *callExpr,
+                                                    const std::string &newCalleeName) {
+  clang::FunctionDecl *oldCallee = callExpr->getDirectCallee();
+  assert(oldCallee && "callee swap requires a resolved callee");
+
+  /// Look the replacement up in the same DeclContext the original callee lives
+  /// in, so the swap can never escape Halide::BoundaryConditions.
+  clang::DeclarationNameInfo nameInfo(&context.Idents.get(newCalleeName), callExpr->getBeginLoc());
+  clang::LookupResult lookupResult(sema, nameInfo, clang::Sema::LookupOrdinaryName);
+  lookupResult.suppressDiagnostics();
+  if (!sema.LookupQualifiedName(lookupResult, oldCallee->getDeclContext())) {
+    return nullptr;
+  }
+
+  clang::CXXScopeSpec scopeSpec;
+  clang::ExprResult callee =
+      sema.BuildDeclarationNameExpr(scopeSpec, lookupResult, /*NeedsADL=*/false);
+  if (callee.isInvalid()) {
+    return nullptr;
+  }
+
+  /// The arguments are reused as-is. Every function in the family takes its
+  /// arguments by const reference, so no argument conversion of the original
+  /// call can be invalidated by the swap; Sema still re-runs overload
+  /// resolution (and template argument deduction for the Func-like overloads)
+  /// against them.
+  llvm::SmallVector<clang::Expr *, 4> arguments(callExpr->arguments().begin(),
+                                                callExpr->arguments().end());
+
+  clang::ExprResult newCall = sema.BuildCallExpr(/*Scope=*/nullptr,
+                                                 callee.get(),
+                                                 callExpr->getBeginLoc(),
+                                                 arguments,
+                                                 callExpr->getRParenLoc());
+  if (newCall.isInvalid()) {
+    return nullptr;
+  }
+  return newCall.get();
+}
+
+void MullASTMutator::performHalideCalleeSwapMutation(
+    ASTMutationPoint &mutation, HalideCalleeSwapMutation &halideCalleeSwapMutator) {
+  clang::CallExpr *oldCall = halideCalleeSwapMutator.callExpr;
+  clang::Expr *newCall =
+      buildCalleeSwappedCall(oldCall, halideCalleeSwapMutator.replacementCalleeName);
+  if (newCall == nullptr) {
+    llvm::errs() << "mull-cxx-frontend: could not build a call to '"
+                 << halideCalleeSwapMutator.replacementCalleeName
+                 << "', skipping mutation: " << mutation.mutationIdentifier << "\n";
+    return;
+  }
+
+  if (!clangAstMutator.replaceExpression(oldCall, newCall, mutation.mutationIdentifier)) {
     return;
   }
   instrumentation.addMutantStringDefinition(mutation.mutationBinaryRecord,

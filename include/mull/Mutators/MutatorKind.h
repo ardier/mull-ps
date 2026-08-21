@@ -97,6 +97,24 @@ enum class MutatorKind {
   Halide_ReplaceParallelToUnrollCall,
   Halide_ReplaceComputeAtToStoreAtCall,
   Halide_ReplaceStoreAtToComputeAtCall,
+
+  /// Halide::BoundaryConditions family swap. Unlike the block above, these are
+  /// produced by the Clang AST route (mull-cxx-frontend), not by matching a
+  /// mangled callee name: the idiomatic entry points are function templates
+  /// instantiated per buffer element type, so there is no stable symbol for the
+  /// IR route to redirect. Kept contiguous for the same range-check reason.
+  Halide_BC_RepeatEdgeToRepeatImage,
+  Halide_BC_RepeatEdgeToMirrorImage,
+  Halide_BC_RepeatEdgeToMirrorInterior,
+  Halide_BC_RepeatImageToRepeatEdge,
+  Halide_BC_RepeatImageToMirrorImage,
+  Halide_BC_RepeatImageToMirrorInterior,
+  Halide_BC_MirrorImageToRepeatEdge,
+  Halide_BC_MirrorImageToRepeatImage,
+  Halide_BC_MirrorImageToMirrorInterior,
+  Halide_BC_MirrorInteriorToRepeatEdge,
+  Halide_BC_MirrorInteriorToRepeatImage,
+  Halide_BC_MirrorInteriorToMirrorImage,
 };
 
 std::string MutationKindToString(MutatorKind mutatorKind);

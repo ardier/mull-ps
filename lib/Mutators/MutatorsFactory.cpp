@@ -3,6 +3,7 @@
 #include "mull/Mutators/CXX/ArithmeticMutators.h"
 #include "mull/Mutators/CXX/BitwiseMutators.h"
 #include "mull/Mutators/CXX/CallMutators.h"
+#include "mull/Mutators/CXX/HalideBoundaryConditionsMutators.h"
 #include "mull/Mutators/CXX/HalideMutators.h"
 #include "mull/Mutators/CXX/NumberMutators.h"
 #include "mull/Mutators/CXX/RelationalMutators.h"
@@ -102,6 +103,22 @@ void MutatorsFactory::init() {
   addMutator<cxx::ReplaceHalideParallelToUnrollCall>(mutatorsMapping);
   addMutator<cxx::ReplaceHalideComputeAtToStoreAtCall>(mutatorsMapping);
   addMutator<cxx::ReplaceHalideStoreAtToComputeAtCall>(mutatorsMapping);
+
+  /// Halide::BoundaryConditions family swap (AST route, group
+  /// halide_boundary_conditions). Same isolation rule as above: not in
+  /// cxx_all / cxx_default.
+  addMutator<cxx::HalideRepeatEdgeToRepeatImage>(mutatorsMapping);
+  addMutator<cxx::HalideRepeatEdgeToMirrorImage>(mutatorsMapping);
+  addMutator<cxx::HalideRepeatEdgeToMirrorInterior>(mutatorsMapping);
+  addMutator<cxx::HalideRepeatImageToRepeatEdge>(mutatorsMapping);
+  addMutator<cxx::HalideRepeatImageToMirrorImage>(mutatorsMapping);
+  addMutator<cxx::HalideRepeatImageToMirrorInterior>(mutatorsMapping);
+  addMutator<cxx::HalideMirrorImageToRepeatEdge>(mutatorsMapping);
+  addMutator<cxx::HalideMirrorImageToRepeatImage>(mutatorsMapping);
+  addMutator<cxx::HalideMirrorImageToMirrorInterior>(mutatorsMapping);
+  addMutator<cxx::HalideMirrorInteriorToRepeatEdge>(mutatorsMapping);
+  addMutator<cxx::HalideMirrorInteriorToRepeatImage>(mutatorsMapping);
+  addMutator<cxx::HalideMirrorInteriorToMirrorImage>(mutatorsMapping);
 }
 
 Mutator *MutatorsFactory::getMutator(const string &mutatorId) {
