@@ -42,6 +42,8 @@ struct Configuration {
   std::string gitDiffRef;
   std::string gitProjectRoot;
 
+  SliceConfig slice{};
+
   DebugConfig debug{};
 
   Configuration();

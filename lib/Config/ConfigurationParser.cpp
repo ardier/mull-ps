@@ -24,6 +24,16 @@ template <> struct llvm::yaml::MappingTraits<ParallelizationConfig> {
   }
 };
 
+template <> struct llvm::yaml::MappingTraits<SliceConfig> {
+  static void mapping(llvm::yaml::IO &io, SliceConfig &config) {
+    /// Reached only when the `slice:` key is actually present in the file,
+    /// which is exactly what `specified` needs to record.
+    config.specified = true;
+    io.mapOptional("index", config.index);
+    io.mapOptional("count", config.count);
+  }
+};
+
 template <> struct llvm::yaml::MappingTraits<DebugConfig> {
   static void mapping(llvm::yaml::IO &io, DebugConfig &config) {
     io.mapOptional("printIR", config.printIR);
@@ -57,6 +67,7 @@ template <> struct llvm::yaml::MappingTraits<Configuration> {
     io.mapOptional("gitProjectRoot", config.gitProjectRoot);
     io.mapOptional("includePaths", config.includePaths);
     io.mapOptional("excludePaths", config.excludePaths);
+    io.mapOptional("slice", config.slice);
     io.mapOptional("debug", config.debug);
   }
 };

@@ -77,6 +77,11 @@ void mull::mutateBitcode(llvm::Module &module) {
   filters.enableGitDiffFilter();
   filters.enableBlockAddressFilter();
   filters.enableVariadicFunctionFilter();
+  /// Installed here, ahead of the junk filter pushed below, so that slicing
+  /// runs before the AST re-parse that junk detection performs. Junk detection
+  /// is a deterministic per-point predicate, so filtering in either order gives
+  /// the same result: union_i(slice_i \ junk) == (all \ junk).
+  filters.enableSliceFilter();
 
   std::string cxxCompilationFlags;
   for (auto &flag : configuration.compilerFlags) {

@@ -6,6 +6,7 @@
 #include "mull/Filters/FilePathFilter.h"
 #include "mull/Filters/GitDiffFilter.h"
 #include "mull/Filters/NoDebugInfoFilter.h"
+#include "mull/Filters/SliceFilter.h"
 #include "mull/Filters/VariadicFunctionFilter.h"
 #include <llvm/Support/FileSystem.h>
 #include <sstream>
@@ -125,4 +126,40 @@ void Filters::enableVariadicFunctionFilter() {
   auto filter = new mull::VariadicFunctionFilter;
   storage.emplace_back(filter);
   functionFilters.push_back(filter);
+}
+
+void Filters::enableSliceFilter() {
+  if (!configuration.slice.specified) {
+    if (configuration.debug.filters) {
+      diagnostics.debug("Slice: no 'slice' key in the configuration, slicing is disabled");
+    }
+    return;
+  }
+
+  const unsigned index = configuration.slice.index;
+  const unsigned count = configuration.slice.count;
+
+  if (count == 0) {
+    diagnostics.error("slice: 'count' must be greater than 0, got 0. "
+                      "Remove the 'slice' key entirely to disable slicing.");
+    return;
+  }
+  if (index >= count) {
+    std::stringstream errorMessage;
+    errorMessage << "slice: 'index' must be less than 'count', got index " << index
+                 << " with count " << count << " (valid indices are 0.." << (count - 1) << ")";
+    diagnostics.error(errorMessage.str());
+    return;
+  }
+
+  std::stringstream infoMessage;
+  infoMessage << "Mutant slicing is enabled: keeping slice " << index << " of " << count;
+  if (count == 1) {
+    infoMessage << " (count is 1, so no mutants are skipped)";
+  }
+  diagnostics.info(infoMessage.str());
+
+  auto *filter = new mull::SliceFilter(index, count);
+  storage.emplace_back(filter);
+  mutationFilters.push_back(filter);
 }
