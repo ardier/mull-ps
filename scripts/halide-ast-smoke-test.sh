@@ -20,6 +20,22 @@
 # BoundaryConditions call site (repeat_edge, line 18) -- the smallest real
 # subject for the halide_boundary_conditions operator family.
 #
+# Validated results on Halide v21.0.0 / LLVM 20 / Mull 0.34.0:
+#
+#   bilateral_grid, halide_boundary_conditions
+#     3 points, all at 18:24-18:70; 3 DIFFERS / 0 SAME / 0 rejected
+#   bilateral_grid, halide_special_calls
+#     2 points (clamp at 23 and 50); 2 DIFFERS / 0 SAME / 0 rejected
+#   camera_pipe, halide_special_calls
+#     24 points -- 9 select sites x 2 operators, plus 6 clamp sites;
+#     20 DIFFERS / 4 SAME / 0 rejected. select->if_then_else is 7 DIFFERS /
+#     2 SAME, reproducing the old stack's 7-of-9 exactly.
+#
+# The two SAME select->if_then_else mutants are genuinely IR-equivalent, not
+# failures: Halide lowers the if_then_else intrinsic back into a Select when it
+# can prove both branches are safe. Report this operator per-site rather than
+# pooling its yield.
+#
 # Usage: scripts/halide-ast-smoke-test.sh <halide-src-with-build> <workdir>
 #   e.g. scripts/halide-ast-smoke-test.sh ../halide-latest /tmp/ast-smoke
 set -o pipefail
